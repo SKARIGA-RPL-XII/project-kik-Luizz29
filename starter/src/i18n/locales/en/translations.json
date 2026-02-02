@@ -1,8 +1,12 @@
 {
   "nav": {
-    "dashboards": {
-      "dashboards": "Dashboards",
-      "home": "Home"
+    "master": {
+      "master": "Master",
+      "home": "Home",
+      "users": "Master User",
+      "mamik": "Mamik",
+      "subject": "Master Subject",
+      "class": "Master Class"
     },
     "settings": {
       "settings": "Settings",
