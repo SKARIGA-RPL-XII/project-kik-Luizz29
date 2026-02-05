@@ -1,5 +1,4 @@
 // Import Dependencies
-import { Link } from "react-router";
 import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
@@ -22,17 +21,19 @@ export default function SignIn() {
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      username: "username",
-      password: "password",
+      email: "",
+      password: "",
     },
   });
 
+
   const onSubmit = (data) => {
     login({
-      username: data.username,
+      email: data.email,
       password: data.password,
     });
   };
+
 
   return (
     <Page title="Login">
@@ -53,17 +54,19 @@ export default function SignIn() {
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
               <div className="space-y-4">
                 <Input
-                  label="Username"
-                  placeholder="Enter Username"
+                  label="Email"
+                  placeholder="Enter Email"
+                  type="email"
                   prefix={
                     <EnvelopeIcon
                       className="size-5 transition-colors duration-200"
                       strokeWidth="1"
                     />
                   }
-                  {...register("username")}
-                  error={errors?.username?.message}
+                  {...register("email")}
+                  error={errors?.email?.message}
                 />
+
                 <Input
                   label="Password"
                   placeholder="Enter Password"
@@ -80,12 +83,11 @@ export default function SignIn() {
               </div>
 
               <div className="mt-2">
-                <InputErrorMsg
-                  when={errorMessage && errorMessage?.message !== ""}
-                >
-                  {errorMessage?.message}
+                <InputErrorMsg when={Boolean(errorMessage)}>
+                  {errorMessage}
                 </InputErrorMsg>
               </div>
+
 
               <div className="mt-4 flex items-center justify-between space-x-2">
                 <Checkbox label="Remember me" />
@@ -102,38 +104,13 @@ export default function SignIn() {
               </Button>
             </form>
             <div className="mt-4 text-center text-xs-plus">
-              <p className="line-clamp-1">
-                <span>Dont have Account?</span>{" "}
-                <Link
-                  className="text-primary-600 transition-colors hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-600"
-                  to="/pages/sign-up-v1"
-                >
-                  Create account
-                </Link>
-              </p>
+            
             </div>
             <div className="my-7 flex items-center space-x-3 text-xs ">
               <div className="h-px flex-1 bg-gray-200 dark:bg-dark-500"></div>
-              <p>OR</p>
               <div className="h-px flex-1 bg-gray-200 dark:bg-dark-500"></div>
             </div>
             <div className="flex gap-4">
-              <Button className="h-10 flex-1 gap-3" variant="outlined">
-                <img
-                  className="size-5.5"
-                  src="/images/logos/google.svg"
-                  alt="logo"
-                />
-                <span>Google</span>
-              </Button>
-              <Button className="h-10 flex-1 gap-3" variant="outlined">
-                <img
-                  className="size-5.5"
-                  src="/images/logos/github.svg"
-                  alt="logo"
-                />
-                <span>Github</span>
-              </Button>
             </div>
           </Card>
           <div className="mt-8 flex justify-center text-xs text-gray-400 dark:text-dark-300">
