@@ -15,6 +15,9 @@ import { Link } from "react-router";
 // Local Imports
 import { Avatar, AvatarDot, Button } from "components/ui";
 
+import { useAuthContext } from "app/contexts/auth/context";
+import { useNavigate } from "react-router";
+
 // ----------------------------------------------------------------------
 
 const links = [
@@ -45,6 +48,13 @@ const links = [
 ];
 
 export function Profile() {
+  const { logout } = useAuthContext();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
   return (
     <Popover className="relative">
       <PopoverButton
@@ -119,10 +129,11 @@ export function Profile() {
                   </Link>
                 ))}
                 <div className="px-4 pt-4">
-                  <Button className="w-full gap-2">
+                  <Button className="w-full gap-2" onClick={handleLogout}>
                     <ArrowLeftStartOnRectangleIcon className="size-4.5" />
                     <span>Logout</span>
                   </Button>
+
                 </div>
               </div>
             </>

@@ -1,9 +1,12 @@
-import { dashboards } from "./dashboards";
-import { master } from "./master";
+import { dashboards } from "./dashboards"
+import { exam } from "./exam"
+import { master } from "./master"
 
 export const navigation = [
-    dashboards,
-    master
-]
+  dashboards,
+  master,
+  exam
+
+].filter(Boolean)   
 
 export { baseNavigation } from './baseNavigation'

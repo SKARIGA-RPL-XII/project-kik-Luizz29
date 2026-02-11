@@ -83,7 +83,7 @@ export function AuthProvider({ children }) {
         if (authToken && isTokenValid(authToken)) {
           setSession(authToken);
 
-          const response = await axios.get("/user/profile");
+          const response = await axios.get("/users/profile");
           const { user } = response.data;
 
           dispatch({
@@ -117,40 +117,40 @@ export function AuthProvider({ children }) {
     init();
   }, []);
 
-  const login = async ({ username, password }) => {
-    dispatch({
-      type: "LOGIN_REQUEST",
-    });
+  const login = async ({ email, password }) => {
+    dispatch({ type: "LOGIN_REQUEST" });
 
     try {
-      const response = await axios.post("/login", {
-        username,
+      const response = await axios.post("/api/auth/login", {
+        email,
         password,
       });
 
-      const { authToken, user } = response.data;
+      const { token, user } = response.data.data;
 
-      if (!isString(authToken) && !isObject(user)) {
-        throw new Error("Response is not vallid");
+      if (!isString(token) || !isObject(user)) {
+        throw new Error("Response is not valid");
       }
 
-      setSession(authToken);
+      setSession(token);
 
       dispatch({
         type: "LOGIN_SUCCESS",
-        payload: {
-          user,
-        },
+        payload: { user },
       });
     } catch (err) {
       dispatch({
         type: "LOGIN_ERROR",
         payload: {
-          errorMessage: err,
+          errorMessage:
+            err?.response?.data?.message ||
+            "Email atau password salah",
         },
       });
     }
+
   };
+
 
   const logout = async () => {
     setSession(null);
