@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import DarkSelect from "components/ui/DarkSelect";
-
+import { Button as TailuxButton } from "components/ui";
 // MUI
 import { ThemeProvider } from "@mui/material/styles";
 import { useMuiTheme } from "hooks/useMuiTheme";
@@ -305,9 +305,13 @@ export default function SiswaPage() {
           </label>
 
           <div className="flex justify-end">
-            <button className="bg-primary px-5 py-2 rounded text-white">
-              Save Siswa
-            </button>
+   
+                <TailuxButton
+                    color="primary"
+
+                >
+                    + Add Bank
+                </TailuxButton>
           </div>
         </form>
 

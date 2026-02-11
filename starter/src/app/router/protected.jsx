@@ -1,10 +1,15 @@
 // Import Dependencies
 import { Navigate } from "react-router";
 
-// Local Imports
+// Layouts
 import { AppLayout } from "app/layouts/AppLayout";
 import { DynamicLayout } from "app/layouts/DynamicLayout";
+
+
+// Middleware
 import AuthGuard from "middleware/AuthGuard";
+import MasterGuard from "middleware/MasterGuard";
+import TeacherGuard from "middleware/TeacherGuard";
 
 // ----------------------------------------------------------------------
 
@@ -12,14 +17,23 @@ const protectedRoutes = {
   id: "protected",
   Component: AuthGuard,
   children: [
-    // The dynamic layout supports both the main layout and the sideblock.
+
+    // =========================
+    // MAIN DASHBOARD AREA
+    // =========================
     {
       Component: DynamicLayout,
       children: [
+
+        // ROOT
         {
           index: true,
-          element: <Navigate to="/dashboards" />,
+          element: <Navigate to="/dashboards/home" />,
         },
+
+        // =========================
+        // DASHBOARDS
+        // =========================
         {
           path: "dashboards",
           children: [
@@ -33,17 +47,128 @@ const protectedRoutes = {
                 Component: (await import("app/pages/dashboards/home")).default,
               }),
             },
+          ],
+        },
+
+        // =========================
+        // MASTER (ADMIN ONLY)
+        // =========================
+        {
+          path: "master",
+          element: <MasterGuard />,
+          children: [
             {
-              path: "master",
+              index: true,
+              element: <Navigate to="/master/users" />,
+            },
+            {
+              path: "users",
               lazy: async () => ({
-                Component: (await import("app/pages/dashboards/home")).default,
+                Component: (await import("app/pages/users/UserPage")).default,
+              }),
+            },
+            {
+              path: "subject",
+              lazy: async () => ({
+                Component: (await import("app/pages/subjects/SubjectPage")).default,
+              }),
+            },
+            {
+              path: "class",
+              lazy: async () => ({
+                Component: (await import("app/pages/class/ClassPage")).default,
+              }),
+            },
+            {
+              path: "room",
+              lazy: async () => ({
+                Component: (await import("app/pages/room/RoomPage")).default,
+              }),
+            },
+            {
+              path: "siswa",
+              lazy: async () => ({
+                Component: (await import("app/pages/siswa/SiswaPage")).default,
+              }),
+            },
+            {
+              path: "teacher",
+              lazy: async () => ({
+                Component: (await import("app/pages/teacher/TeacherPage")).default,
+              }),
+            },
+            {
+              path: "question",
+              lazy: async () => ({
+                Component: (await import("app/pages/user/ExamPage")).default,
               }),
             },
           ],
         },
+
+        {
+          path: "exam",
+          element: <MasterGuard />,
+          children: [
+            {
+              index: true,
+              element: <Navigate to="/teacher/exam" />,
+            },
+            {
+              path: "list",
+              lazy: async () => ({
+                Component: (await import("app/pages/exam/AddExamPage")).default,
+              }),
+            },
+            {
+              path: "question-bank/:headerid",
+              lazy: async () => ({
+                Component: (await import("app/pages/teacher/QuestionList")).default,
+              }),
+            },
+            {
+              path: ":id",
+              lazy: async () => ({
+                Component: (await import("app/pages/exam/ExamBuilderPage")).default,
+              }),
+            },
+
+          ],
+        },
+
+        // =========================
+        // TEACHER AREA
+        // =========================
+        {
+          path: "teacher",
+          element: <TeacherGuard />, // kalau nanti mau RBAC teacher
+          children: [
+            {
+              index: true,
+              element: <Navigate to="/teacher/exam" />,
+            },
+            {
+              path: "exam",
+              lazy: async () => ({
+                Component: (await import("app/pages/teacher/QuestionBank")).default,
+              }),
+            },
+            {
+              path: "question-bank/:headerid",
+              lazy: async () => ({
+                Component: (await import("app/pages/teacher/QuestionList")).default,
+              }),
+            }
+
+          ],
+        },
+
       ],
     },
-    // The app layout supports only the main layout. Avoid using it for other layouts.
+
+    // =========================
+    // SETTINGS AREA (Different Layout)
+    // =========================
     {
       Component: AppLayout,
       children: [
@@ -60,8 +185,9 @@ const protectedRoutes = {
             {
               path: "general",
               lazy: async () => ({
-                Component: (await import("app/pages/settings/sections/General"))
-                  .default,
+                Component: (
+                  await import("app/pages/settings/sections/General")
+                ).default,
               }),
             },
             {
@@ -76,6 +202,7 @@ const protectedRoutes = {
         },
       ],
     },
+
   ],
 };
 

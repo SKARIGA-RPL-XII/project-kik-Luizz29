@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import DarkSelect from "components/ui/DarkSelect";
+import { Button as TailuxButton } from "components/ui";
 
 //MUI AREA //
 import { ThemeProvider } from "@mui/material/styles";
@@ -79,9 +81,9 @@ export default function UserPage() {
   // FETCH DATA
   // ======================
   const fetchUsers = async () => {
-    const token = localStorage.getItem("authToken"); 
+    const token = localStorage.getItem("authToken");
 
-    console.log("TOKEN YANG DIKIRIM:", token); 
+    console.log("TOKEN YANG DIKIRIM:", token);
 
     const res = await fetch(`${API_URL}/users`, {
       method: "GET",
@@ -315,14 +317,7 @@ export default function UserPage() {
   return (
     <div className="p-6 md:p-8">
       {/* CARD */}
-      <div
-        className="
-          w-full max-w-full xl:max-w-6xl 2xl:max-w-7xl
-          bg-background
-          border border-divider
-          rounded-xl shadow-sm
-        "
-      >
+      <div className="bg-background border border-divider rounded-xl">
         {/* HEADER */}
         <div className="border-b border-divider px-6 py-4">
           <h1 className="text-lg font-semibold text-foreground">
@@ -384,45 +379,26 @@ export default function UserPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <select
-              className="
-    w-full rounded-lg px-4 py-2 text-sm
-    bg-card
-    border border-divider
-    text-foreground
-    focus:outline-none focus:ring-2 focus:ring-primary/40
-  "
-              value={roleId}
-              onChange={(e) => setRoleId(Number(e.target.value))}
-              required
-            >
-              <option value="" disabled>
-                -- Pilih Role --
-              </option>
+            <DarkSelect
+              label="Role"
+              placeholder="-- Pilih Role --"
+              value={roleId || null}
+              options={roles.map((role) => ({
+                value: role.roleid,
+                label: role.rolenm,
+              }))}
+              onChange={(val) => setRoleId(Number(val))}
+            />
 
-              {roles.map((role) => (
-                <option
-                  key={role.roleid}
-                  value={role.roleid}
-                  className="bg-card text-foreground"
-                >
-                  {role.rolenm}
-                </option>
-              ))}
-
-            </select>
           </div>
 
           <div className="flex justify-end">
-            <button
+            <TailuxButton
+              color="primary"
               type="submit"
-              className="
-                rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white
-                hover:bg-primary/90 transition
-              "
             >
-              Save User
-            </button>
+              + Add Bank
+            </TailuxButton>
           </div>
         </form>
 
