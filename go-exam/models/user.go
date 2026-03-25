@@ -6,13 +6,15 @@ import (
 )
 
 type User struct {
-	ID       uint   `json:"id" gorm:"primaryKey"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"-"`
+    ID       uint   `json:"id" gorm:"primaryKey"`
+    Name     string `json:"name"`
+    Email    string `json:"email"`
+    Password string `json:"-"`
 
-	RoleID uint `json:"role_id" gorm:"column:roleid"`
-	Role   Role `json:"role" gorm:"foreignKey:RoleID;references:RoleID"`
+    RoleID uint `json:"role_id" gorm:"column:roleid"`
+    
+    // ⭐ TAMBAHKAN constraint:- di sini
+    Role   Role `json:"role" gorm:"foreignKey:RoleID;references:RoleID;constraint:-"`
 }
 
 
@@ -21,7 +23,6 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Hash password sebelum disimpan ke database
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword(
 		[]byte(u.Password),

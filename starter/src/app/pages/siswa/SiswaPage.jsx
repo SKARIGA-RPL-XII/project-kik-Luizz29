@@ -308,6 +308,7 @@ export default function SiswaPage() {
    
                 <TailuxButton
                     color="primary"
+                    type="submit"
 
                 >
                     + Add Bank

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -34,19 +33,15 @@ func (s *userService) GetProfile(userID uint) (*models.User, error) {
 }
 
 func (s *userService) Create(req models.CreateUserRequest) (*models.User, error) {
+
 	user := models.User{
-		Name:   req.Name,
-		Email: req.Email,
-		RoleID: req.RoleID,
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password, // password asli
+		RoleID:   req.RoleID,
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, errors.New("failed hash password")
-	}
-	user.Password = string(hashed)
-
-	err = s.repo.Create(&user)
+	err := s.repo.Create(&user)
 	return &user, err
 }
 

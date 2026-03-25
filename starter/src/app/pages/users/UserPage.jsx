@@ -7,6 +7,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { useMuiTheme } from "hooks/useMuiTheme";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import { Snackbar, Alert } from "@mui/material";
 
 
 import {
@@ -69,6 +70,13 @@ export default function UserPage() {
   const [isSuccessOpen, { open: openSuccess, close: closeSuccess }] =
     useDisclosure(false);
 
+  //TOAST
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "info", // "success", "error", "warning", "info"
+  });
+
 
 
   // ======================
@@ -126,21 +134,27 @@ export default function UserPage() {
   // ======================
   // CREATE USER
   // ======================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken");
 
-    if (!token) {
-      alert("Token tidak ditemukan, silakan login ulang");
-      return;
-    }
+  if (!token) {
+    setToast({
+      open: true,
+      message: "Token tidak ditemukan, silakan login ulang",
+      severity: "error",
+    });
+    return;
+  }
 
-    await fetch(`${API_URL}/users`, {
+  try {
+
+    const res = await fetch(`${API_URL}/users`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // 🔥 INI KUNCINYA
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         name,
@@ -150,12 +164,46 @@ export default function UserPage() {
       }),
     });
 
+    if (!res.ok) {
+      setToast({
+        open: true,
+        message: "Gagal menambahkan user",
+        severity: "error",
+      });
+      return;
+    }
+
+    const json = await res.json();
+
+    // Update table realtime jika API return data
+    if (json?.data) {
+      setUsers((prev) => [...prev, json.data]);
+    } else {
+      fetchUsers();
+    }
+
+    // Reset form
     setName("");
     setEmail("");
     setPassword("");
     setRoleId("");
-    fetchUsers();
-  };
+
+    setToast({
+      open: true,
+      message: "User berhasil ditambahkan",
+      severity: "success",
+    });
+
+  } catch (err) {
+
+    setToast({
+      open: true,
+      message: "Terjadi kesalahan server" + err.message,
+      severity: "error",
+    });
+
+  }
+};
 
 
 
@@ -612,6 +660,21 @@ export default function UserPage() {
           </TransitionChild>
         </HeadlessDialog>
       </Transition>
+
+<Snackbar
+  open={toast.open}
+  autoHideDuration={3000}
+  onClose={() => setToast({ ...toast, open: false })}
+  anchorOrigin={{ vertical: "top", horizontal: "right" }}
+>
+  <Alert
+    severity={toast.severity}
+    variant="filled"
+    onClose={() => setToast({ ...toast, open: false })}
+  >
+    {toast.message}
+  </Alert>
+</Snackbar>
 
     </div>
 
