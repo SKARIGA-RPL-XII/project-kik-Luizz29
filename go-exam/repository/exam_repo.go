@@ -20,6 +20,8 @@ type ExamRepository interface {
 	CountExamQuestions(examID uint) (int64, error)
 	HasSchedule(examID uint) (bool, error)
 	PublishExam(examID uint) error
+	AssignTeacher(examID uint, teacherID uint) error
+	GetMyExams(userID uint) ([]models.ExamHd, error)
 }
 
 type examRepository struct {
@@ -163,3 +165,17 @@ func (r *examRepository) PublishExam(examID uint) error {
 		Where("id = ?", examID).
 		Update("status", "Published").Error
 }
+func (r *examRepository) AssignTeacher(examID uint, teacherID uint) error {
+    return r.db.Model(&models.ExamHd{}).
+        Where("id = ?", examID).
+        Update("teacherid", teacherID).Error
+}
+
+func (r *examRepository) GetMyExams(userID uint) ([]models.ExamHd, error) {
+	var exams []models.ExamHd
+	err := r.db.
+		Joins("JOIN msteacher t ON t.teacherid = trexamhd.teacherid").
+		Where("t.userid = ? AND trexamhd.status <> ?", userID, "Deleted").
+		Find(&exams).Error
+	return exams, err
+}

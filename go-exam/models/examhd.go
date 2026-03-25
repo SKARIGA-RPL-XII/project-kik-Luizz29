@@ -11,6 +11,8 @@ type ExamHd struct {
 	QuestionBankID *uint     `gorm:"column:questionbankid" json:"questionbankid"`
 	CreatedBy      uint      `gorm:"column:createdby" json:"createdby"`
 	CreatedDate    time.Time `gorm:"column:createddate" json:"createddate"`
+	ExamToken      string    `gorm:"column:examtoken" json:"examtoken"`
+	TeacherID      *uint     `gorm:"column:teacherid" json:"teacherid"`
 }
 
 func (ExamHd) TableName() string {

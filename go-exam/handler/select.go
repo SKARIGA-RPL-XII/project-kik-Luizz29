@@ -62,4 +62,15 @@ func (h *SelectHandler) GetSubjects(c *gin.Context) {
 	c.JSON(200, gin.H{"data": subjects})
 }
 
+func (h *SelectHandler) GetTeachers(c *gin.Context) {
+    teachers, err := h.service.GetTeachers()
+    if err != nil {
+        c.JSON(500, gin.H{
+            "message": "Failed to fetch teachers",
+        })
+        return
+    }
+
+    c.JSON(200, gin.H{"data": teachers})
+}
 

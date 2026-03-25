@@ -7,6 +7,7 @@ import (
 	"github.com/Luizz29/go-gin-project/models"
 	"github.com/Luizz29/go-gin-project/repository"
 	"gorm.io/gorm"
+	"github.com/Luizz29/go-gin-project/utils"
 )
 
 type examService struct {
@@ -40,22 +41,29 @@ type ExamService interface {
 	GetByID(id uint) (*models.ExamHd, error)
 	Update(id uint, req models.ExamRequest) error
 	Delete(id uint) error
-	SetBank(examID uint, bankID uint) error
-	SnapshotQuestions(examID uint, bankID uint) error
+
 	GetExamQuestions(examID uint) ([]models.ExamQuestion, error)
+
 	AssignClass(examID uint, req models.AssignClassRequest) error
 	GetAssignedClasses(examID uint) ([]models.AssignedClassDTO, error)
 	GetParticipants(examID uint) ([]models.ExamParticipantDTO, error)
+
 	PublishExam(examID uint) error
+	AssignTeacher(examID uint, teacherID uint) error
+	GetMyExams(userID uint) ([]models.ExamHd, error)
+	SetBank(examID uint, bankID uint) error
 }
 
 func (s *examService) Create(req models.ExamRequest, adminID uint) (*models.ExamHd, error) {
+
+	token := utils.GenerateExamToken()
 
 	exam := models.ExamHd{
 		ExamNm:      req.ExamNm,
 		Description: req.Description,
 		Duration:    req.Duration,
 		Status:      "Draft",
+		ExamToken:   token,
 		CreatedBy:   adminID,
 		CreatedDate: time.Now(),
 	}
@@ -63,6 +71,7 @@ func (s *examService) Create(req models.ExamRequest, adminID uint) (*models.Exam
 	err := s.repo.Create(&exam)
 	return &exam, err
 }
+
 
 func (s *examService) GetAll() ([]models.ExamHd, error) {
 	return s.repo.GetAll()
@@ -270,4 +279,10 @@ func (s *examService) PublishExam(examID uint) error {
 
 	return s.repo.PublishExam(examID)
 }
+func (s *examService) AssignTeacher(examID uint, teacherID uint) error {
+    return s.repo.AssignTeacher(examID, teacherID)
+}
 
+func (s *examService) GetMyExams(userID uint) ([]models.ExamHd, error) {
+	return s.repo.GetMyExams(userID)
+}

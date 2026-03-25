@@ -12,8 +12,6 @@ func (QuestionOption) TableName() string {
 	return "trquestionoption"
 }
 
-
-
 type CreateOptionRequest struct {
 	Label     string `json:"label" binding:"required"`
 	Text      string `json:"text" binding:"required"`

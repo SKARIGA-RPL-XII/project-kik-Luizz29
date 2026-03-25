@@ -96,29 +96,6 @@ func (h *ExamHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
-func (h *ExamHandler) SetBank(c *gin.Context) {
-
-	idParam := c.Param("id")
-	examID, _ := strconv.Atoi(idParam)
-
-	var req struct {
-		QuestionBankID uint `json:"questionbankid"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-
-	err := h.service.SetBank(uint(examID), req.QuestionBankID)
-
-	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(200, gin.H{"message": "Bank applied"})
-}
 
 func (h *ExamHandler) GetExamQuestions(c *gin.Context) {
 
@@ -215,4 +192,74 @@ func (h *ExamHandler) Publish(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "exam published",
 	})
+}
+func (h *ExamHandler) AssignTeacher(c *gin.Context) {
+    // 1. Ambil ID Ujian dari URL (contoh: /master/exam/8/assign-teacher)
+    examID, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid exam ID"})
+        return
+    }
+
+    // 2. Tangkap JSON yang dikirim dari React
+    var input struct {
+        TeacherID uint `json:"teacher_id"`
+    }
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input"})
+        return
+    }
+
+    // 3. Panggil Service untuk update ke database
+    err = h.service.AssignTeacher(uint(examID), input.TeacherID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to assign teacher"})
+        return
+    }
+
+    // 4. Kembalikan response sukses
+    c.JSON(http.StatusOK, gin.H{
+        "message": "Teacher assigned successfully",
+    })
+}
+
+func (h *ExamHandler) GetMyExams(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	data, err := h.service.GetMyExams(userID.(uint))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data})
+}
+
+func (h *ExamHandler) SetBank(c *gin.Context) {
+	examID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid exam ID"})
+		return
+	}
+
+	var input struct {
+		QuestionBankID uint `json:"questionbankid"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid input"})
+		return
+	}
+
+	err = h.service.SetBank(uint(examID), input.QuestionBankID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to set bank"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Bank set successfully"})
 }
