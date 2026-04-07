@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, Button } from "components/ui";
 import DarkSelect from "components/ui/DarkSelect";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
 
 export default function ParticipantTab({ examId }) {
 

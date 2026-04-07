@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function SecurityTab({
     examId,
@@ -93,17 +94,17 @@ export default function SecurityTab({
             const json = await res.json();
 
             if (!res.ok) {
-                alert(json.error || "Failed saving security");
+                toast.error(json.error || "Failed saving security");
                 setLoading(false);
                 return;
             }
 
             await refreshSecurity();
-            alert("Security setting saved");
+            toast.success("Security setting saved");
 
         } catch (err) {
             console.log(err);
-            alert("Error saving security");
+            toast.error("Error saving security");
         }
 
         setLoading(false);

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { DatePicker } from "components/shared/form/Datepicker";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 // ================= HELPER FORMAT WIB =================
 const formatLocalDate = (date) => {
@@ -50,12 +51,12 @@ export default function ScheduleTab({
     e.preventDefault();
 
     if (!form.startTime || !form.endTime) {
-      alert("Start & End time wajib diisi");
+      toast.warning("Start & End time wajib diisi");
       return;
     }
 
     if (form.endTime <= form.startTime) {
-      alert("End time harus setelah Start time");
+      toast.warning("End time harus setelah Start time");
       return;
     }
 
@@ -82,17 +83,17 @@ export default function ScheduleTab({
 
       if (!res.ok) {
         const json = await res.json();
-        alert(json.error);
+        toast.error(json.error);
         setLoading(false);
         return;
       }
 
       await refreshSchedule();
-      alert("Schedule saved");
+      toast.success("Schedule saved");
 
     } catch (err) {
       console.log(err);
-      alert("Error saving schedule");
+      toast.error("Error saving schedule");
     }
 
     setLoading(false);

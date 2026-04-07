@@ -1,4 +1,7 @@
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
+import { useState } from 'react';
+import { ConfirmModal } from 'components/shared/ConfirmModal';
 
 export default function PublishTab({
   exam,
@@ -10,6 +13,8 @@ export default function PublishTab({
   examId,
   refreshExam
 }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const hasQuestions = examQuestions?.length > 0;
   const hasSchedule = !!schedule;
@@ -32,12 +37,15 @@ export default function PublishTab({
   const handlePublish = async () => {
 
     if (!isReady) {
-      alert("Exam belum siap dipublish");
+      toast.warning("Exam belum siap dipublish");
       return;
     }
 
-    if (!window.confirm("Yakin ingin publish exam ini?")) return;
+    setShowConfirm(true);
+  };
 
+  const executePublish = async () => {
+    setIsPublishing(true);
     try {
 
       const res = await fetch(
@@ -53,16 +61,21 @@ export default function PublishTab({
       const json = await res.json();
 
       if (!res.ok) {
-        alert(json.error || "Publish gagal");
+        toast.error(json.error || "Publish gagal");
+        setIsPublishing(false);
+        setShowConfirm(false);
         return;
       }
 
-      alert("Exam berhasil dipublish");
+      toast.success("Exam berhasil dipublish");
       refreshExam();
 
     } catch (err) {
       console.log(err);
-      alert("Error publish exam");
+      toast.error("Error publish exam");
+    } finally {
+      setIsPublishing(false);
+      setShowConfirm(false);
     }
   };
 
@@ -135,6 +148,20 @@ export default function PublishTab({
           : "Publish Exam"}
       </button>
 
+      <ConfirmModal
+        show={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onOk={executePublish}
+        confirmLoading={isPublishing}
+        state="pending"
+        messages={{
+          pending: {
+            title: "Publish Exam?",
+            description: "Yakin ingin publish exam ini? Konfigurasi tidak dapat diubah setelah dipublish.",
+            actionText: "Publish",
+          },
+        }}
+      />
     </div>
   );
 }
