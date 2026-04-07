@@ -8,4 +8,13 @@ type SelectRepository interface {
 	GetClasses() ([]models.SelectClass, error)
 
 	GetSubjects() ([]models.SelectSubject, error) 
+	GetTeachers() ([]models.SelectTeacher, error)
+}
+func (r *selectRepository) GetTeachers() ([]models.SelectTeacher, error) {
+    var teachers []models.SelectTeacher
+    
+
+    err := r.db.Find(&teachers).Error 
+    
+    return teachers, err
 }

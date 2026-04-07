@@ -10,6 +10,12 @@ type StudentRepository struct {
 	db *gorm.DB
 }
 
+func (r *StudentRepository) GetStudentAnswers(participantID uint) ([]models.ExamAnswer, error) {
+	var answers []models.ExamAnswer
+	err := r.db.Where("participantid = ?", participantID).Find(&answers).Error
+	return answers, err
+}
+
 func NewStudentRepository(db *gorm.DB) *StudentRepository {
 	return &StudentRepository{db}
 }
@@ -64,6 +70,13 @@ func (r *StudentRepository) GetExamSchedule(examID int) (*models.ExamSchedule, e
 
 	return &s, err
 }
+
+func (r *StudentRepository) GetExamSecurity(examID int) (*models.ExamSecurity, error) {
+	var sec models.ExamSecurity
+	err := r.db.Table("trexamsecurity").Where("examid = ?", examID).First(&sec).Error
+	return &sec, err
+}
+
 func (r *StudentRepository) UpdateParticipantStatus(id int, status string) error {
 
 	return r.db.
