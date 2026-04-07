@@ -4,9 +4,7 @@ import { Button as TailuxButton } from "components/ui";
 import DarkSelect from "components/ui/DarkSelect";
 
 // MUI
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
+
 
 
 import {
@@ -15,18 +13,10 @@ import {
     flexRender,
 } from "@tanstack/react-table";
 
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions,
-    Button,
-    Snackbar,
-    Alert,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function QuestionList() {
     const questionTypeOptions = [
@@ -50,13 +40,6 @@ export default function QuestionList() {
     const [selectedId, setSelectedId] = useState(null);
     const [openDelete, setOpenDelete] = useState(false);
 
-    const [toast, setToast] = useState({
-        open: false,
-        message: "",
-        severity: "success",
-    });
-
-    const muiTheme = useMuiTheme();
     const token = localStorage.getItem("authToken");
 
     const [options, setOptions] = useState([
@@ -134,19 +117,11 @@ export default function QuestionList() {
             ]);
 
             // ✅ success toast
-            setToast({
-                open: true,
-                message: "Soal berhasil ditambahkan",
-                severity: "success",
-            });
+            toast.success("Soal berhasil ditambahkan");
 
         } catch (error) {
 
-            setToast({
-                open: true,
-                message: error.message,
-                severity: "error",
-            });
+            toast.error(error.message);
         }
     };
 
@@ -172,44 +147,11 @@ const handleManage = async (question) => {
         setOpenManage(true);
 
     } catch (error) {
-        setToast({
-            open: true,
-            message: error.message || "Gagal load option",
-            severity: "error",
-        });
+        toast.error(error.message || "Gagal load option");
     }
 };
 
-<Dialog
-    open={openManage}
-    onClose={() => setOpenManage(false)}
-    maxWidth="sm"
-    fullWidth
->
-    <DialogTitle>
-        Manage Option
-    </DialogTitle>
-
-    <DialogContent>
-
-        {questionOptions.map((opt) => (
-            <div key={opt.optionid} className="flex justify-between py-2">
-
-                <span>
-                    {opt.label}. {opt.text}
-                </span>
-
-                {opt.iscorrect && (
-                    <span className="text-green-500 font-semibold">
-                        ✔ Correct
-                    </span>
-                )}
-
-            </div>
-        ))}
-
-    </DialogContent>
-</Dialog>
+    // The dialog has been moved to the render return
 
 
     // ================= DELETE =================
@@ -225,11 +167,7 @@ const handleManage = async (question) => {
 
         setOpenDelete(false);
 
-        setToast({
-            open: true,
-            message: "Soal berhasil dihapus",
-            severity: "success",
-        });
+        toast.success("Soal berhasil dihapus");
     };
 
     // ================= TABLE =================
@@ -251,28 +189,27 @@ const handleManage = async (question) => {
                     <div className="flex gap-2">
 
                         {/* ⭐ MANAGE OPTION */}
-                        <Button
+                        <TailuxButton
                             size="small"
                             variant="outlined"
                             color="primary"
                             onClick={() => handleManage(row.original)}
                         >
                             Manage
-                        </Button>
+                        </TailuxButton>
 
                         {/* DELETE */}
-                        <Button
+                        <TailuxButton
                             size="small"
                             variant="outlined"
                             color="error"
-                            startIcon={<DeleteIcon />}
                             onClick={() => {
                                 setSelectedId(row.original.detailid);
                                 setOpenDelete(true);
                             }}
                         >
                             Delete
-                        </Button>
+                        </TailuxButton>
 
                     </div>
                 ),
@@ -304,88 +241,89 @@ const handleManage = async (question) => {
                 {/* FORM */}
                 <form
                     onSubmit={handleSubmit}
-                    className="px-6 py-6 space-y-4 border-b border-divider"
+                    className="px-6 py-6 space-y-6 border-b border-divider"
                 >
-                    <textarea
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="Tulis pertanyaan..."
-                        className="w-full rounded-lg border border-divider bg-card px-4 py-3 text-sm resize-none focus:ring-2 focus:ring-primary/40"
-                        rows={3}
-                        required
-                    />
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Pertanyaan</label>
+                        <textarea
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            placeholder="Tulis pertanyaan..."
+                            className="w-full rounded-lg border border-divider bg-card text-foreground px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+                            rows={3}
+                            required
+                        />
+                    </div>
 
-                    <DarkSelect
-                        placeholder="Pilih tipe soal"
-                        value={type}
-                        options={questionTypeOptions}
-                        onChange={setType}
-                    />
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Tipe Soal</label>
+                        <DarkSelect
+                            placeholder="Pilih tipe soal"
+                            value={type}
+                            options={questionTypeOptions}
+                            onChange={setType}
+                        />
+                    </div>
 
                     {type === "mcq" && (
-                        <div className="space-y-3">
+                        <div className="space-y-4 bg-black/20 p-5 rounded-xl border border-divider">
+                            <p className="text-sm font-medium text-foreground">Pilihan Jawaban</p>
+                            <div className="space-y-3">
+                                {options.map((opt, index) => (
+                                    <div key={opt.label} className="flex gap-4 items-center">
+                                        <div className="flex items-center justify-center w-8 h-8 rounded-lg border border-divider bg-card text-sm font-semibold">
+                                            {opt.label}
+                                        </div>
 
-                            <p className="text-sm font-semibold">Pilihan Jawaban</p>
+                                        <input
+                                            type="text"
+                                            value={opt.text}
+                                            onChange={(e) =>
+                                                handleOptionChange(index, "text", e.target.value)
+                                            }
+                                            className="flex-1 rounded-lg border border-divider bg-card text-foreground px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+                                            placeholder={`Masukkan pilihan ${opt.label}...`}
+                                        />
 
-                            {options.map((opt, index) => (
-                                <div key={opt.label} className="flex gap-3 items-center">
-
-                                    <span className="font-semibold w-6">{opt.label}</span>
-
-                                    <input
-                                        type="text"
-                                        value={opt.text}
-                                        onChange={(e) =>
-                                            handleOptionChange(index, "text", e.target.value)
-                                        }
-                                        className="flex-1 rounded-lg border border-divider px-3 py-2 text-sm"
-                                        placeholder={`Option ${opt.label}`}
-                                    />
-
-                                    <input
-                                        type="checkbox"
-                                        checked={opt.iscorrect}
-                                        onChange={(e) =>
-                                            handleOptionChange(index, "iscorrect", e.target.checked)
-                                        }
-                                    />
-
-                                    <span className="text-xs">Correct</span>
-
-                                </div>
-                            ))}
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                checked={opt.iscorrect}
+                                                onChange={(e) =>
+                                                    handleOptionChange(index, "iscorrect", e.target.checked)
+                                                }
+                                                className="w-4 h-4 accent-primary cursor-pointer"
+                                            />
+                                            <span className={`text-sm select-none transition-colors group-hover:text-primary ${opt.iscorrect ? 'text-primary font-medium' : 'text-muted'}`}>
+                                                Jawaban Benar
+                                            </span>
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
-
-                    <div>
-
-
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Nilai Soal</label>
                         <input
                             type="number"
                             min="0"
                             value={score}
                             onChange={(e) => setScore(e.target.value)}
-                            className="
-                            mt-1 w-full rounded-lg px-4 py-2 text-sm
-                            bg-card text-foreground
-                            border border-divider
-                            focus:outline-none focus:ring-2 focus:ring-primary/40
-                            "
-                            placeholder="Masukkan nilai soal"
+                            className="w-full rounded-lg px-4 py-2.5 text-sm bg-card text-foreground border border-divider focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+                            placeholder="Masukkan nilai (contoh: 5)"
                             required
                         />
                     </div>
 
-
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pt-2">
                         <TailuxButton
                             type="submit"
                             color="primary"
                         >
                             + Add Question
                         </TailuxButton>
-
                     </div>
                 </form>
 
@@ -420,33 +358,40 @@ const handleManage = async (question) => {
             </div>
 
             {/* DIALOG + TOAST */}
-            <ThemeProvider theme={muiTheme}>
-                <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-                    <DialogTitle>Hapus Soal</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText>
-                            Yakin ingin menghapus soal ini?
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-                        <Button color="error" variant="contained" onClick={handleConfirmDelete}>
-                            Hapus
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+            
+            {/* MANAGE OPTION */}
+            <Modal open={openManage} onClose={() => setOpenManage(false)}>
+                <ModalHeader>Manage Option</ModalHeader>
+                <ModalBody className="space-y-2">
+                    {questionOptions.map((opt) => (
+                        <div key={opt.optionid} className="flex justify-between py-2 border-b border-divider last:border-0">
+                            <span>{opt.label}. {opt.text}</span>
+                            {opt.iscorrect && (
+                                <span className="text-success font-semibold">
+                                    ✔ Correct
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </ModalBody>
+                <ModalFooter>
+                    <TailuxButton onClick={() => setOpenManage(false)} variant="outlined">Tutup</TailuxButton>
+                </ModalFooter>
+            </Modal>
 
-                <Snackbar
-                    open={toast.open}
-                    autoHideDuration={3000}
-                    onClose={() => setToast({ ...toast, open: false })}
-                    anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                >
-                    <Alert severity={toast.severity} variant="filled">
-                        {toast.message}
-                    </Alert>
-                </Snackbar>
-            </ThemeProvider>
+            {/* DELETE */}
+            <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+                <ModalHeader>Hapus Soal</ModalHeader>
+                <ModalBody>
+                    Yakin ingin menghapus soal ini?
+                </ModalBody>
+                <ModalFooter>
+                    <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+                    <TailuxButton color="error" onClick={handleConfirmDelete}>
+                        Hapus
+                    </TailuxButton>
+                </ModalFooter>
+            </Modal>
         </div>
     );
 }

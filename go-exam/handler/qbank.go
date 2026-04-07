@@ -31,7 +31,32 @@ func (h *QuestionBankHandler) GetAll(c *gin.Context) {
 	})
 }
 
+func (h *QuestionBankHandler) GetMyBanks(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	data, err := h.service.GetMyBanks(userID.(uint))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Success",
+		"data":    data,
+	})
+}
+
 func (h *QuestionBankHandler) Create(c *gin.Context) {
+
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
 
 	var req models.CreateQuestionBankRequest
 
@@ -40,7 +65,7 @@ func (h *QuestionBankHandler) Create(c *gin.Context) {
 		return
 	}
 
-	data, err := h.service.Create(req)
+	data, err := h.service.Create(userID.(uint), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return

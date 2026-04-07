@@ -7,6 +7,8 @@ import (
 
 type QuestionBankRepository interface {
 	GetAll() ([]models.QuestionBankHeader, error)
+	GetMyBanks(userID uint) ([]models.QuestionBankHeader, error)
+	GetTeacherID(userID uint) (uint, error)
 	Create(data *models.QuestionBankHeader) error
 	Delete(id uint) error
 }
@@ -24,6 +26,26 @@ func (r *questionBankRepository) GetAll() ([]models.QuestionBankHeader, error) {
 
 	err := r.db.Preload("Details").Find(&data).Error
 	return data, err
+}
+
+func (r *questionBankRepository) GetMyBanks(userID uint) ([]models.QuestionBankHeader, error) {
+	var data []models.QuestionBankHeader
+
+	var teacher models.Teacher
+	if err := r.db.Where("userid = ?", userID).First(&teacher).Error; err != nil {
+		return nil, err
+	}
+
+	err := r.db.Preload("Details").Where("teacherid = ?", teacher.TeacherID).Find(&data).Error
+	return data, err
+}
+
+func (r *questionBankRepository) GetTeacherID(userID uint) (uint, error) {
+	var teacher models.Teacher
+	if err := r.db.Where("userid = ?", userID).First(&teacher).Error; err != nil {
+		return 0, err
+	}
+	return teacher.TeacherID, nil
 }
 
 func (r *questionBankRepository) Create(data *models.QuestionBankHeader) error {

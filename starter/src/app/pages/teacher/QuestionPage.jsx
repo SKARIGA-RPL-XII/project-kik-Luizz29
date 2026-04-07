@@ -2,7 +2,8 @@ import { useParams } from "react-router";
 import { useEffect, useState } from "react";
 import { Button } from "components/ui";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function QuestionPage() {
   const { headerid } = useParams();
@@ -65,11 +66,12 @@ export default function QuestionPage() {
     });
 
     if (!res.ok) {
-      alert("Gagal tambah soal");
+      toast.error("Gagal tambah soal");
       return;
     }
 
     setForm(emptyQuestion());
+    toast.success("Soal berhasil ditambahkan");
     fetchQuestions();
   };
 

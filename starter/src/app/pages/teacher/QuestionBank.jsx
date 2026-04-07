@@ -5,10 +5,7 @@ import { useNavigate } from "react-router";
 
 
 // MUI
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+
 
 
 import {
@@ -18,18 +15,10 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function QuestionBankPage() {
 
@@ -54,13 +43,6 @@ export default function QuestionBankPage() {
   const [editSubjectId, setEditSubjectId] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-
-  const muiTheme = useMuiTheme();
   const token = localStorage.getItem("authToken");
 
   // ======================
@@ -129,7 +111,7 @@ export default function QuestionBankPage() {
 
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal menambahkan bank", severity: "error" });
+      toast.error("Gagal menambahkan bank");
       return;
     }
 
@@ -140,7 +122,7 @@ export default function QuestionBankPage() {
     setSubjectId("");
     setDescription("");
 
-    setToast({ open: true, message: "Bank berhasil ditambahkan", severity: "success" });
+    toast.success("Bank berhasil ditambahkan");
   };
 
   // ======================
@@ -161,7 +143,7 @@ export default function QuestionBankPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal update bank", severity: "error" });
+      toast.error("Gagal update bank");
       return;
     }
 
@@ -179,7 +161,7 @@ export default function QuestionBankPage() {
     );
 
     setOpenEdit(false);
-    setToast({ open: true, message: "Bank berhasil diupdate", severity: "success" });
+    toast.success("Bank berhasil diupdate");
   };
 
   // ======================
@@ -194,11 +176,7 @@ export default function QuestionBankPage() {
     });
 
     if (!res.ok) {
-      setToast({
-        open: true,
-        message: "Gagal hapus bank",
-        severity: "error",
-      });
+      toast.error("Gagal hapus bank");
       return;
     }
 
@@ -208,11 +186,7 @@ export default function QuestionBankPage() {
 
     setOpenDelete(false);
 
-    setToast({
-      open: true,
-      message: "Bank berhasil dihapus",
-      severity: "success",
-    });
+    toast.success("Bank berhasil dihapus");
   };
 
   // ======================
@@ -237,10 +211,9 @@ export default function QuestionBankPage() {
           return (
             <div className="flex gap-2 flex-wrap">
               {/* ===== EDIT ===== */}
-              <Button
+              <TailuxButton
                 size="small"
                 variant="outlined"
-                startIcon={<EditIcon />}
                 onClick={() => {
                   setEditId(bank.headerid);
                   setEditTitle(bank.title);
@@ -250,21 +223,20 @@ export default function QuestionBankPage() {
                 }}
               >
                 Edit
-              </Button>
+              </TailuxButton>
 
               {/* ===== DELETE ===== */}
-              <Button
+              <TailuxButton
                 size="small"
                 variant="outlined"
                 color="error"
-                startIcon={<DeleteIcon />}
                 onClick={() => {
                   setSelectedId(bank.headerid);
                   setOpenDelete(true);
                 }}
               >
                 Delete
-              </Button>
+              </TailuxButton>
 
               {/* ===== MANAGE QUESTION ===== */}
               <TailuxButton
@@ -385,29 +357,26 @@ export default function QuestionBankPage() {
       </div>
 
       {/* DIALOG + TOAST */}
-      <ThemeProvider theme={muiTheme}>
-
+      
         {/* DELETE */}
-        <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-          <DialogTitle>Hapus Bank</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Yakin ingin menghapus bank ini?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-            <Button color="error" variant="contained" onClick={handleConfirmDelete}>
+        <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+          <ModalHeader>Hapus Bank</ModalHeader>
+          <ModalBody>
+            Yakin ingin menghapus bank ini?
+          </ModalBody>
+          <ModalFooter>
+            <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+            <TailuxButton color="error" onClick={handleConfirmDelete}>
               Hapus
-            </Button>
-          </DialogActions>
-        </Dialog>
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
         {/* EDIT */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)}>
-          <DialogTitle>Edit Bank</DialogTitle>
+        <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
+          <ModalHeader>Edit Bank</ModalHeader>
 
-          <DialogContent className="space-y-4">
+          <ModalBody className="space-y-4">
 
             <input
               className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider"
@@ -431,28 +400,15 @@ export default function QuestionBankPage() {
               onChange={(e) => setEditDescription(e.target.value)}
             />
 
-          </DialogContent>
+          </ModalBody>
 
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button variant="contained" onClick={handleConfirmEdit}>
+          <ModalFooter>
+            <TailuxButton onClick={() => setOpenEdit(false)} variant="outlined">Batal</TailuxButton>
+            <TailuxButton color="primary" onClick={handleConfirmEdit}>
               Simpan
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* TOAST */}
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={3000}
-          onClose={() => setToast({ ...toast, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert severity={toast.severity} variant="filled">
-            {toast.message}
-          </Alert>
-        </Snackbar>
-      </ThemeProvider>
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
     </div>
   );
 }

@@ -9,7 +9,8 @@ import (
 
 type QuestionBankService interface {
 	GetAll() ([]models.QuestionBankHeader, error)
-	Create(req models.CreateQuestionBankRequest) (*models.QuestionBankHeader, error)
+	GetMyBanks(userID uint) ([]models.QuestionBankHeader, error)
+	Create(userID uint, req models.CreateQuestionBankRequest) (*models.QuestionBankHeader, error)
 	Delete(id uint) error
 }
 
@@ -25,12 +26,22 @@ func (s *questionBankService) GetAll() ([]models.QuestionBankHeader, error) {
 	return s.repo.GetAll()
 }
 
-func (s *questionBankService) Create(req models.CreateQuestionBankRequest) (*models.QuestionBankHeader, error) {
+func (s *questionBankService) GetMyBanks(userID uint) ([]models.QuestionBankHeader, error) {
+	return s.repo.GetMyBanks(userID)
+}
+
+func (s *questionBankService) Create(userID uint, req models.CreateQuestionBankRequest) (*models.QuestionBankHeader, error) {
+
+	// Override the TeacherID intelligently on the server level
+	teacherID, err := s.repo.GetTeacherID(userID)
+	if err != nil {
+		return nil, err
+	}
 
 	header := models.QuestionBankHeader{
 		Title:       req.Title,
 		SubjectID:   req.SubjectID,
-		TeacherID:   req.TeacherID,
+		TeacherID:   teacherID,
 		Description: req.Description,
 		CreatedDate: time.Now(),
 		UpdatedDate: time.Now(),
@@ -44,7 +55,7 @@ func (s *questionBankService) Create(req models.CreateQuestionBankRequest) (*mod
 		})
 	}
 
-	err := s.repo.Create(&header)
+	err = s.repo.Create(&header)
 	return &header, err
 }
 

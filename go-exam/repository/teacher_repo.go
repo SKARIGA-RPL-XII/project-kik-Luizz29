@@ -36,7 +36,7 @@ func (r *teacherRepository) Update(t models.Teacher) error {
 }
 
 func (r *teacherRepository) Delete(id uint) error {
-	return r.db.Delete(&models.Teacher{}, id).Error
+	return r.db.Where("teacherid = ?", id).Delete(&models.Teacher{}).Error
 }
 
 func (r *teacherRepository) GetByID(id uint) (models.Teacher, error) {

@@ -6,6 +6,7 @@ import (
 	"github.com/Luizz29/go-gin-project/models"
 	"github.com/Luizz29/go-gin-project/repository"
 )
+
 type TeacherService interface {
 	GetAll() ([]models.Teacher, error)
 	Create(models.CreateTeacherRequest) (models.Teacher, error)
@@ -29,13 +30,13 @@ func (s *teacherService) Create(req models.CreateTeacherRequest) (models.Teacher
 	data := models.Teacher{
 		TeacherNm:   req.TeacherNm,
 		UserID:      req.UserID,
+		SubjectID:   req.SubjectID, // penting
 		IsActive:    req.IsActive,
 		CreatedDate: time.Now(),
 	}
 
 	return s.repo.Create(data)
 }
-
 func (s *teacherService) Update(id uint, req models.UpdateTeacherRequest) error {
 
 	data, err := s.repo.GetByID(id)

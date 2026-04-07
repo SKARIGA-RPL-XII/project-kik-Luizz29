@@ -3,30 +3,20 @@ import DarkSelect from "components/ui/DarkSelect";
 import { Button as TailuxButton } from "components/ui";
 
 // MUI
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+
 
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function TeacherPage() {
 
@@ -39,19 +29,16 @@ export default function TeacherPage() {
   const [isActive, setIsActive] = useState(true);
 
   const [openDelete, setOpenDelete] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editIsActive, setEditIsActive] = useState(true);
 
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
+  const [subjects, setSubjects] = useState([]);
+  const [subjectId, setSubjectId] = useState("");
 
-  const muiTheme = useMuiTheme();
+
   const token = localStorage.getItem("authToken");
 
   // ================= FETCH =================
@@ -63,47 +50,55 @@ export default function TeacherPage() {
       .then(r => r.json())
       .then(j => setUsers(j.data || []));
 
+    fetch(`${API_URL}/select/subjects`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(j => setSubjects(j.data || []));
+
     fetch(`${API_URL}/master/teacher`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
       .then(j => setTeachers(j.data || []));
 
-  }, []);
+  }, [token]);
 
   // ================= CREATE =================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const res = await fetch(`${API_URL}/master/teacher`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        teachernm: teacherName,
-        userid: Number(userId),
-        isactive: isActive,
-      }),
-    });
+  const res = await fetch(`${API_URL}/master/teacher`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      teachernm: teacherName,
+      userid: Number(userId),
+      subjectid: Number(subjectId),   // ← TAMBAHAN
+      isactive: isActive,
+    }),
+  });
 
-    if (!res.ok) {
-      setToast({ open: true, message: "Gagal menambahkan teacher", severity: "error" });
-      return;
-    }
+  if (!res.ok) {
+    toast.error("Gagal menambahkan teacher");
+    return;
+  }
 
-    const json = await res.json();
+  const json = await res.json();
 
-    setTeachers(prev => [...prev, json.data]);
+  setTeachers((prev) => [...prev, json.data]);
 
-    setTeacherName("");
-    setUserId("");
-    setIsActive(true);
+  // reset form
+  setTeacherName("");
+  setUserId("");
+  setSubjectId("");   // ← reset subject
+  setIsActive(true);
 
-    setToast({ open: true, message: "Teacher berhasil ditambahkan", severity: "success" });
-  };
-
+  toast.success("Teacher berhasil ditambahkan");
+};
   // ================= EDIT =================
   const handleConfirmEdit = async () => {
 
@@ -119,7 +114,7 @@ export default function TeacherPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal update teacher", severity: "error" });
+      toast.error("Gagal update teacher");
       return;
     }
 
@@ -133,29 +128,32 @@ export default function TeacherPage() {
 
     setOpenEdit(false);
 
-    setToast({ open: true, message: "Teacher berhasil diupdate", severity: "success" });
+    toast.success("Teacher berhasil diupdate");
   };
 
   // ================= DELETE =================
   const handleConfirmDelete = async () => {
 
-    const res = await fetch(`${API_URL}/master/teacher/${selectedId}`, {
+    if (!selectedTeacher) return;
+
+    const res = await fetch(`${API_URL}/master/teacher/${selectedTeacher.teacherid}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal menghapus teacher", severity: "error" });
+      toast.error("Gagal menghapus teacher");
       return;
     }
 
     setTeachers(prev =>
-      prev.filter(t => t.teacherid !== selectedId)
+      prev.filter(t => t.teacherid !== selectedTeacher.teacherid)
     );
 
     setOpenDelete(false);
+    setSelectedTeacher(null);
 
-    setToast({ open: true, message: "Teacher berhasil dihapus", severity: "success" });
+    toast.success("Teacher berhasil dihapus");
   };
 
   // ================= TABLE =================
@@ -167,23 +165,22 @@ export default function TeacherPage() {
 
     {
       header: "User",
-      accessorKey: "userid",
-      cell: ({ getValue }) =>
-        users.find(u => u.userid === getValue())?.username || "-"
+      accessorFn: (row) => users.find(u => u.userid === row.userid)?.username || "-",
+      id: "username",
     },
 
     {
       header: "Status",
-      accessorKey: "isactive",
+      accessorFn: (row) => (row.isactive ? "ACTIVE" : "INACTIVE"),
+      id: "status",
       cell: ({ getValue }) => (
         <span
-          className={`px-2 py-0.5 rounded text-xs font-semibold ${
-            getValue()
-              ? "bg-success/20 text-success"
-              : "bg-danger/20 text-danger"
-          }`}
+          className={`px-2 py-0.5 rounded text-xs font-semibold ${getValue() === "ACTIVE"
+            ? "bg-success/20 text-success"
+            : "bg-danger/20 text-danger"
+            }`}
         >
-          {getValue() ? "ACTIVE" : "INACTIVE"}
+          {getValue()}
         </span>
       )
     },
@@ -193,10 +190,9 @@ export default function TeacherPage() {
       cell: ({ row }) => (
         <div className="flex gap-2">
 
-          <Button
+          <TailuxButton
             size="small"
             variant="outlined"
-            startIcon={<EditIcon />}
             onClick={() => {
               setEditId(row.original.teacherid);
               setEditIsActive(row.original.isactive);
@@ -204,20 +200,19 @@ export default function TeacherPage() {
             }}
           >
             Edit
-          </Button>
+          </TailuxButton>
 
-          <Button
+          <TailuxButton
             size="small"
             variant="outlined"
             color="error"
-            startIcon={<DeleteIcon />}
             onClick={() => {
-              setSelectedId(row.original.teacherid);
+              setSelectedTeacher(row.original);
               setOpenDelete(true);
             }}
           >
             Delete
-          </Button>
+          </TailuxButton>
 
         </div>
       )
@@ -225,11 +220,16 @@ export default function TeacherPage() {
 
   ], [users]);
 
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const table = useReactTable({
     data: teachers,
     columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   // ================= UI =================
@@ -272,13 +272,26 @@ export default function TeacherPage() {
             onChange={setUserId}
           />
 
+          {/* Subject Select */}
+          <DarkSelect
+            label="Subject"
+            placeholder="-- Pilih Subject --"
+            value={subjectId}
+            options={subjects.map(s => ({
+              value: s.subjectid,
+              label: s.subjectnm,
+            }))}
+            onChange={setSubjectId}
+          />
+
+
+
           {/* Active */}
           <label
-            className={`flex items-center gap-3 rounded-lg px-4 py-3 border cursor-pointer transition ${
-              isActive
-                ? "border-success/60 bg-success/10 text-success"
-                : "border-divider bg-background text-muted"
-            }`}
+            className={`flex items-center gap-3 rounded-lg px-4 py-3 border cursor-pointer transition ${isActive
+              ? "border-success/60 bg-success/10 text-success"
+              : "border-divider bg-background text-muted"
+              }`}
           >
             <input
               type="checkbox"
@@ -290,12 +303,21 @@ export default function TeacherPage() {
           </label>
 
           <div className="flex justify-end">
-            <TailuxButton color="primary">
+            <TailuxButton color="primary" type="submit">
               + Add Teacher
             </TailuxButton>
           </div>
 
         </form>
+
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search..."
+            className="w-64 rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
 
         {/* TABLE */}
         <div className="px-6 py-4 overflow-x-auto">
@@ -330,62 +352,44 @@ export default function TeacherPage() {
       </div>
 
       {/* DIALOG + TOAST */}
-      <ThemeProvider theme={muiTheme}>
+      
+      {/* DELETE */}
+      <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+        <ModalHeader>Hapus Teacher</ModalHeader>
+        <ModalBody>
+            Yakin mau menghapus teacher ini?
+        </ModalBody>
+        <ModalFooter>
+          <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+          <TailuxButton
+            color="error"
+            onClick={handleConfirmDelete}
+          >
+            Hapus
+          </TailuxButton>
+        </ModalFooter>
+      </Modal>
 
-        {/* DELETE */}
-        <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-          <DialogTitle>Hapus Teacher</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Yakin mau menghapus teacher ini?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-            <Button
-              color="error"
-              variant="contained"
-              onClick={handleConfirmDelete}
-            >
-              Hapus
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* EDIT */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)}>
-          <DialogTitle>Edit Teacher</DialogTitle>
-          <DialogContent>
-            <label className="flex items-center gap-3 mt-3">
-              <input
-                type="checkbox"
-                checked={editIsActive}
-                onChange={(e) => setEditIsActive(e.target.checked)}
-              />
-              Active Teacher
-            </label>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button variant="contained" onClick={handleConfirmEdit}>
-              Simpan
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* TOAST */}
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={3000}
-          onClose={() => setToast({ ...toast, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert severity={toast.severity} variant="filled">
-            {toast.message}
-          </Alert>
-        </Snackbar>
-
-      </ThemeProvider>
+      {/* EDIT */}
+      <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
+        <ModalHeader>Edit Teacher</ModalHeader>
+        <ModalBody>
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={editIsActive}
+              onChange={(e) => setEditIsActive(e.target.checked)}
+            />
+            Active Teacher
+          </label>
+        </ModalBody>
+        <ModalFooter>
+          <TailuxButton onClick={() => setOpenEdit(false)} variant="outlined">Batal</TailuxButton>
+          <TailuxButton color="primary" onClick={handleConfirmEdit}>
+            Simpan
+          </TailuxButton>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
