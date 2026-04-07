@@ -16,7 +16,6 @@ import { Link } from "react-router";
 import { Avatar, AvatarDot, Button } from "components/ui";
 
 import { useAuthContext } from "app/contexts/auth/context";
-import { useNavigate } from "react-router";
 
 // ----------------------------------------------------------------------
 
@@ -49,11 +48,10 @@ const links = [
 
 export function Profile() {
   const { logout } = useAuthContext();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate("/login", { replace: true });
+    window.location.href = "/login";
   };
   return (
     <Popover className="relative">

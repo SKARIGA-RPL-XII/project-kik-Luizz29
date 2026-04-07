@@ -12,8 +12,9 @@ type User struct {
     Password string `json:"-"`
 
     RoleID uint `json:"role_id" gorm:"column:roleid"`
+	IsActive bool `json:"isactive" gorm:"column:isactive"`
     
-    // ⭐ TAMBAHKAN constraint:- di sini
+
     Role   Role `json:"role" gorm:"foreignKey:RoleID;references:RoleID;constraint:-"`
 }
 

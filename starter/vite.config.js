@@ -5,10 +5,17 @@ import eslint from 'vite-plugin-eslint';
 import svgr from 'vite-plugin-svgr'
 import tailwindcss from "@tailwindcss/vite";
 
-
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), jsconfigPaths(), svgr(),
-  eslint(), tailwindcss(),
+  plugins: [
+    react(), 
+    jsconfigPaths(), 
+    svgr(),
+    eslint(), 
+    tailwindcss(),
   ],
+  server: {
+    host: true, // Menggantikan keharusan mengetik --host di terminal
+    allowedHosts: true, // Mengizinkan semua domain tunnel seperti Cloudflare
+  }
 })

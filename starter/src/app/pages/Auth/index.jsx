@@ -9,10 +9,15 @@ import { Button, Card, Checkbox, Input, InputErrorMsg } from "components/ui";
 import { useAuthContext } from "app/contexts/auth/context";
 import { schema } from "./schema";
 import { Page } from "components/shared/Page";
+import { useNavigate } from "react-router-dom";
+
 
 // ----------------------------------------------------------------------
 
 export default function SignIn() {
+  const navigate = useNavigate();
+
+
   const { login, errorMessage } = useAuthContext();
   const {
     register,
@@ -27,12 +32,30 @@ export default function SignIn() {
   });
 
 
-  const onSubmit = (data) => {
-    login({
-      email: data.email,
-      password: data.password,
-    });
+const onSubmit = async (data) => {
+  const user = await login({
+    email: data.email,
+    password: data.password,
+  });
+
+  console.log("LOGIN RESULT:", user);   // ⭐ disini
+  console.log("ROLE OBJECT:", user?.role); 
+  console.log("ROLE ID:", user?.role?.roleid);
+  console.log("TYPE:", typeof user?.role?.roleid);
+
+  if (!user) return;
+
+  const roleId = user.role?.roleid;
+
+  const roleRedirect = {
+    1: "/dashboards/home",
+    2: "/dashboards/home",
+    3: "/student/dashboard",
   };
+
+  navigate(roleRedirect[roleId] || "/");
+};
+
 
 
   return (
@@ -104,7 +127,7 @@ export default function SignIn() {
               </Button>
             </form>
             <div className="mt-4 text-center text-xs-plus">
-            
+
             </div>
             <div className="my-7 flex items-center space-x-3 text-xs ">
               <div className="h-px flex-1 bg-gray-200 dark:bg-dark-500"></div>

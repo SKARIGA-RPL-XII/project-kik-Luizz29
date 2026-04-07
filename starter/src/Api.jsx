@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8081";
+import { API_URL } from './utils/config';
 
 export const getUsers = async () => {
   const res = await fetch(`${API_URL}/users`);

@@ -109,6 +109,7 @@ func SetupRoutes(
 	question.Use(middlewares.JWTAuth())
 	{
 		question.GET("", questionBankHandler.GetAll)
+		question.GET("/my-banks", questionBankHandler.GetMyBanks)
 		question.POST("", questionBankHandler.Create)
 		question.DELETE("/:id", questionBankHandler.Delete)
 	}
@@ -171,8 +172,10 @@ func SetupRoutes(
 	{
 		student.GET("/dashboard", studentHandler.GetDashboard)
 		student.POST("/exam/:examID/join", studentHandler.JoinExam)
+		student.POST("/exam/:examID/heartbeat", studentHandler.Heartbeat)
 		student.GET("/exam/:examID/questions", studentHandler.GetExamQuestions)
 		student.POST("/exam/:examID/submit", studentHandler.SubmitExam)
+		student.GET("/exam/:examID/result", studentHandler.GetExamResult)
 	}
 
 }

@@ -20,3 +20,15 @@ type SelectSubject struct {
 	SubjectNm string `json:"subjectnm" gorm:"column:subjectnm"`
 }
 
+type SelectTeacher struct {
+    TeacherID uint   `json:"teacherid" gorm:"column:teacherid;primaryKey"`
+    TeacherNm string `json:"teachernm" gorm:"column:teachernm"`
+}
+
+func (SelectTeacher) TableName() string {
+    return "msteacher"
+}
+
+func (SelectRole) TableName() string {
+    return "msrole"
+}

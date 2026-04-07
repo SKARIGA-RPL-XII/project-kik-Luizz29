@@ -11,6 +11,7 @@ type SelectService interface {
 	GetClasses() ([]models.SelectClass, error)
 
 	GetSubjects() ([]models.SelectSubject, error) 
+	GetTeachers() ([]models.SelectTeacher, error)
 }
 
 
@@ -36,5 +37,9 @@ func (s *selectService) GetClasses() ([]models.SelectClass, error) {
 
 func (s *selectService) GetSubjects() ([]models.SelectSubject, error) {
 	return s.repo.GetSubjects()
+}
+
+func (s *selectService) GetTeachers() ([]models.SelectTeacher, error) {
+	return s.repo.GetTeachers()
 }
 

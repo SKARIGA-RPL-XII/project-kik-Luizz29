@@ -1,5 +1,6 @@
 // Import Dependencies
 import { Navigate } from "react-router";
+import { StudentLayout } from "app/layouts/StudentLayout";
 
 // Layouts
 import { AppLayout } from "app/layouts/AppLayout";
@@ -19,21 +20,50 @@ const protectedRoutes = {
   children: [
 
     // =========================
-    // MAIN DASHBOARD AREA
+    // STUDENT AREA (NO SIDEBAR)
+    // =========================  
+    {
+      path: "student",
+      Component: StudentLayout,
+
+      children: [
+        {
+          path: "dashboard",
+          lazy: async () => ({
+            Component: (await import("app/pages/student/DashboardPage")).default,
+          }),
+        },
+
+        // ⭐ ROUTE EXAM
+        {
+          path: "exam/:examID",
+          lazy: async () => ({
+            Component: (await import("app/pages/student/ExamPage")).default,
+          }),
+        },
+        {
+          path: "exam/:examID/result",
+          lazy: async () => ({
+            Component: (await import("app/pages/student/ExamResultPage")).default,
+          }),
+        },
+      ],
+    },
+
+
+    // =========================
+    // ADMIN + TEACHER AREA (SIDEBAR)
     // =========================
     {
+      path: "/",
       Component: DynamicLayout,
       children: [
 
-        // ROOT
         {
           index: true,
           element: <Navigate to="/dashboards/home" />,
         },
 
-        // =========================
-        // DASHBOARDS
-        // =========================
         {
           path: "dashboards",
           children: [
@@ -50,9 +80,7 @@ const protectedRoutes = {
           ],
         },
 
-        // =========================
-        // MASTER (ADMIN ONLY)
-        // =========================
+        // ===== MASTER ADMIN =====
         {
           path: "master",
           element: <MasterGuard />,
@@ -97,33 +125,18 @@ const protectedRoutes = {
                 Component: (await import("app/pages/teacher/TeacherPage")).default,
               }),
             },
-            {
-              path: "question",
-              lazy: async () => ({
-                Component: (await import("app/pages/user/ExamPage")).default,
-              }),
-            },
           ],
         },
 
+        // ===== EXAM =====
         {
           path: "exam",
           element: <MasterGuard />,
           children: [
             {
-              index: true,
-              element: <Navigate to="/teacher/exam" />,
-            },
-            {
               path: "list",
               lazy: async () => ({
                 Component: (await import("app/pages/exam/AddExamPage")).default,
-              }),
-            },
-            {
-              path: "question-bank/:headerid",
-              lazy: async () => ({
-                Component: (await import("app/pages/teacher/QuestionList")).default,
               }),
             },
             {
@@ -132,16 +145,13 @@ const protectedRoutes = {
                 Component: (await import("app/pages/exam/ExamBuilderPage")).default,
               }),
             },
-
           ],
         },
 
-        // =========================
-        // TEACHER AREA
-        // =========================
+        // ===== TEACHER =====
         {
           path: "teacher",
-          element: <TeacherGuard />, // kalau nanti mau RBAC teacher
+          element: <TeacherGuard />,
           children: [
             {
               index: true,
@@ -154,22 +164,38 @@ const protectedRoutes = {
               }),
             },
             {
+              path: "assigned-exams",
+              lazy: async () => ({
+                Component: (await import("app/pages/teacher/AssignedExams")).default,
+              }),
+            },
+
+
+            // ✅ TAMBAHKAN INI
+            {
               path: "question-bank/:headerid",
               lazy: async () => ({
                 Component: (await import("app/pages/teacher/QuestionList")).default,
               }),
-            }
-
+            },
+            // ✅ TAMBAHKAN INI
+            {
+              path: "manage-question-exam/:id",
+              lazy: async () => ({
+                Component: (await import("app/pages/teacher/ManageExamQuestion")).default,
+              }),
+            },
           ],
-        },
+        }
+
 
       ],
     },
 
     // =========================
-    // SETTINGS AREA (Different Layout)
+    // SETTINGS (APP LAYOUT)
     // =========================
-    {
+      {
       Component: AppLayout,
       children: [
         {
@@ -205,5 +231,4 @@ const protectedRoutes = {
 
   ],
 };
-
 export { protectedRoutes };

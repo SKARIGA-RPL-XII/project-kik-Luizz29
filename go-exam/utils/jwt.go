@@ -11,7 +11,7 @@ func GenerateToken(userID uint, email string, roleID uint) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"email":   email,
-		"role_id": roleID, // 🔥 INI YANG DIPAKAI RBAC
+		"role_id": roleID, 
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
 	}
 

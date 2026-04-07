@@ -11,7 +11,7 @@ roleId === 1 ?
     id: 'dashboards',
     type: NAV_TYPE_ROOT,
     path: ROOT_DASHBOARDS,
-    title: 'Dashboards',
+    title: 'Exam Management',
     Icon: AcademicCapIcon,
     childs: [
         {

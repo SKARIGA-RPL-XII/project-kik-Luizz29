@@ -22,6 +22,13 @@ export const master =
             title: 'Manage Question Bank',
             Icon: HomeIcon,
         },
+        {
+            id: 'dashboards.assignedexams',
+            path: path(ROOT_DASHBOARDS, '/assigned-exams'),
+            type: NAV_TYPE_ITEM, 
+            title: 'Assigned Exams',
+            Icon: HomeIcon,
+        },
     ]
 
 }

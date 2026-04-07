@@ -6,7 +6,12 @@
       "users": "Master User",
       "mamik": "Mamik",
       "subject": "Master Subject",
-      "class": "Master Class"
+      "class": "Master Class",
+      "room": "Master Room",
+      "siswa": "Master Siswa",
+      "guru": "Guru Menu",
+      "questionsbank": "Questions Bank",
+      "teacher": "Master Teacher"
     },
     "settings": {
       "settings": "Settings",

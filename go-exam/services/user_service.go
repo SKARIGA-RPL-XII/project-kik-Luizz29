@@ -39,6 +39,7 @@ func (s *userService) Create(req models.CreateUserRequest) (*models.User, error)
 		Email:    req.Email,
 		Password: req.Password, // password asli
 		RoleID:   req.RoleID,
+		IsActive: true,
 	}
 
 	err := s.repo.Create(&user)

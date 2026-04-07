@@ -1,8 +1,8 @@
 // Import Dependencies
 import { useEffect, useReducer } from "react";
-import isObject from "lodash/isObject";
+// import isObject from "lodash/isObject";
 import PropTypes from "prop-types";
-import isString from "lodash/isString";
+// import isString from "lodash/isString";
 
 // Local Imports
 import axios from "utils/axios";
@@ -128,16 +128,14 @@ export function AuthProvider({ children }) {
 
       const { token, user } = response.data.data;
 
-      if (!isString(token) || !isObject(user)) {
-        throw new Error("Response is not valid");
-      }
-
       setSession(token);
 
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: { user },
       });
+
+      return user;
     } catch (err) {
       dispatch({
         type: "LOGIN_ERROR",
@@ -147,9 +145,11 @@ export function AuthProvider({ children }) {
             "Email atau password salah",
         },
       });
-    }
 
+      return null;
+    }
   };
+
 
 
   const logout = async () => {

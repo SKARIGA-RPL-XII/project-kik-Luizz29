@@ -19,19 +19,22 @@ func main() {
 
 	// ================= CORS =================
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://192.168.1.11:5173",
+			"https://senator-replacing-host-worked.trycloudflare.com", 
+		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},           
+		AllowHeaders:     []string{"Content-Type", "Authorization", "Origin", "Accept"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
 	// ================= DB =================
 	db := config.ConnectDB()
 
 	db.AutoMigrate(
-		&models.User{},
 		&models.Role{},
+		&models.User{},
 		&models.Subject{},
 	)
 
@@ -50,6 +53,7 @@ func main() {
 	scheduleRepo := repository.NewExamScheduleRepository(db)
 	classMemberRepo := repository.NewClassMemberRepository(db)
 	examSecurityRepo := repository.NewExamSecurityRepository(db)
+	studentRepo := repository.NewStudentRepository(db)
 
 	// ================= SERVICE =================
 	authService := services.NewAuthService(userRepo)
@@ -63,6 +67,7 @@ func main() {
 	questionBankService := services.NewQuestionBankService(questionBankRepo)
 	scheduleService := services.NewExamScheduleService(scheduleRepo)
 	examSecurityService := services.NewExamSecurityService(examSecurityRepo)
+	studentService := services.NewStudentService(studentRepo, siswaRepo)
 
 	// ⭐ FIX FINAL
 	examService := services.NewExamService(
@@ -91,6 +96,8 @@ func main() {
 	examHandler := handler.NewExamHandler(examService)
 	scheduleHandler := handler.NewExamScheduleHandler(scheduleService)
 	examSecurityHandler := handler.NewExamSecurityHandler(examSecurityService)
+	studentHandler := handler.NewStudentHandler(studentService)
+
 	// ================= ROUTES =================
 	routes.SetupRoutes(
 		r,
@@ -108,7 +115,52 @@ func main() {
 		examHandler,
 		scheduleHandler,
 		examSecurityHandler,
+		studentHandler,
 	)
 
 	r.Run(":8081")
 }
+
+// // //COMPARE HASH PASSWORD
+
+// // // package main
+
+// // // import (
+// // // 	"fmt"
+// // // 	"golang.org/x/crypto/bcrypt"
+// // // )
+
+// // // func main() {
+
+// // // 	err := bcrypt.CompareHashAndPassword(
+// // //     []byte("$2a$10$3Crtqp8WUqPo.n.NHnz1Ru18bbk2pjPEO9WPhotKYBFVwc4.1JxZm"),
+// // //     []byte("siswa"),
+// // // )
+
+// // // fmt.Println(err)
+
+// // // }
+
+// package main
+
+// import (
+// 	"fmt"
+// 	"golang.org/x/crypto/bcrypt"
+// )
+
+// func main() {
+// 	// 1. Password asli yang ingin kamu ubah menjadi hash
+// 	password := "alfaluis"
+
+// 	// 2. Generate hash menggunakan bcrypt.DefaultCost (standarnya adalah 10)
+// 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+// 	if err != nil {
+// 		fmt.Println("Gagal membuat hash:", err)
+// 		return
+// 	}
+
+// 	// 3. Ubah tipe []byte menjadi string agar bisa dicetak dan disalin
+// 	fmt.Println("Password Asli :", password)
+// 	fmt.Println("Hasil Hash    :", string(hashedPassword))
+// }
