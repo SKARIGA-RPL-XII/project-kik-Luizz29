@@ -8,7 +8,7 @@ import ScheduleTab from "./ScheduleTab";
 import SecurityTab from "./SecurityTab";
 import PublishTab from "./PublishTab";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
 
 export default function ExamBuilderPage() {
 
@@ -165,17 +165,19 @@ export default function ExamBuilderPage() {
       <button
         onClick={onClick}
         disabled={disabled}
-        className={`px-4 py-2 rounded-lg text-sm transition
-          ${active
-            ? "bg-primary text-white"
-            : "bg-card border border-divider"}
-          ${disabled ? "opacity-50 cursor-not-allowed" : ""}
-        `}
+        className={`px-4 py-2 rounded-lg text-sm transition font-medium
+        ${active
+            ? "bg-primary text-primary-foreground"
+            : "bg-card border border-divider text-foreground hover:bg-muted"
+          }
+        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+      `}
       >
         {label}
       </button>
     );
   }
+
 
   return (
     <div className="p-6 md:p-8 space-y-4">

@@ -4,7 +4,8 @@ import { ConfirmModal } from "components/shared/ConfirmModal";
 import { useDisclosure } from "hooks";
 
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function ExamPage() {
 
@@ -59,21 +60,26 @@ export default function ExamPage() {
   // =============================
   // JOIN EXAM
   // =============================
-  const joinExam = async (id) => {
+  const joinExam = async (id, coords) => {
 
     const res = await fetch(
       `${API_URL}/student/exam/${id}/join`,
       {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+           latitude: coords.latitude,
+           longitude: coords.longitude
+        })
       }
     );
 
     if (!res.ok) {
       const err = await res.json();
-      alert(err.message || "Tidak bisa join ujian");
+      toast.error(err.message || "Tidak bisa join ujian");
       navigate("/student/dashboard");
       return false;
     }
@@ -96,7 +102,7 @@ export default function ExamPage() {
     );
 
     if (!res.ok) {
-      alert("Gagal mengambil soal");
+      toast.error("Gagal mengambil soal");
       navigate("/student/dashboard");
       return;
     }
@@ -106,7 +112,24 @@ export default function ExamPage() {
   };
 
   // =============================
-  // LOAD EXAM ENGINE
+  // REQUEST GEOLOCATION
+  // =============================
+  const requestLocation = () => {
+      return new Promise((resolve) => {
+          if (!navigator.geolocation) {
+              resolve({ latitude: 0, longitude: 0 });
+              return;
+          }
+          navigator.geolocation.getCurrentPosition(
+              (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+              () => resolve({ latitude: 0, longitude: 0 }),
+              { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          );
+      });
+  };
+
+  // =============================
+  // LOAD EXAM ENGINE & HEARTBEAT
   // =============================
   useEffect(() => {
 
@@ -116,13 +139,13 @@ export default function ExamPage() {
     joinedRef.current = true;
 
     const loadExam = async () => {
-
-      const ok = await joinExam(Number(examID));
+      
+      const coords = await requestLocation();
+      const ok = await joinExam(Number(examID), coords);
       if (!ok) return;
 
       await fetchQuestions(Number(examID));
 
-      // restore jawaban dari localStorage
       const saved = localStorage.getItem(`exam_${examID}_answers`);
       if (saved) {
         setAnswers(JSON.parse(saved));
@@ -132,6 +155,37 @@ export default function ExamPage() {
     };
 
     loadExam();
+
+    // 15 seconds Heartbeat tracker
+    const heartbeatInterval = setInterval(async () => {
+       const coords = await requestLocation();
+       fetch(`${API_URL}/student/exam/${examID}/heartbeat`, {
+           method: "POST",
+           headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+           },
+           body: JSON.stringify(coords)
+       }).then(async res => {
+           if (!res.ok) {
+               // Periksa tipe konten untuk mencegah error JSON parse
+               const contentType = res.headers.get("content-type");
+               if (contentType && contentType.includes("application/json")) {
+                   const err = await res.json();
+                   toast.error(err.message || "Sistem mendeteksi akses jaringan tidak sah atau lokasi berada di luar jangkauan radar ujian! Ujian diblokir.");
+               } else {
+                   toast.error("Jaringan/IP berubah atau akses ditolak oleh server. Anda dikeluarkan dari ujian!");
+               }
+               navigate("/student/dashboard");
+           }
+       }).catch((err) => {
+           console.error("Heartbeat error:", err);
+           toast.error("Koneksi tidak stabil, berganti jaringan, atau server tidak dapat dijangkau. Keamanan ujian gagal divalidasi. Anda dikeluarkan!");
+           navigate("/student/dashboard");
+       });
+    }, 15000);
+
+    return () => clearInterval(heartbeatInterval);
 
   }, [examID]);
 
@@ -162,6 +216,7 @@ export default function ExamPage() {
     setConfirmLoading(true);
 
     try {
+      const coords = await requestLocation();
 
       const res = await fetch(
         `${API_URL}/student/exam/${examID}/submit`,
@@ -172,12 +227,17 @@ export default function ExamPage() {
             Authorization: `Bearer ${token}`
           },
           body: JSON.stringify({
-            answers: answers
+            answers: answers,
+            latitude: coords.latitude,
+            longitude: coords.longitude
           })
         }
       );
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.message || "Gagal mengumpulkan");
+      }
 
       localStorage.removeItem(`exam_${examID}_answers`);
 
@@ -189,7 +249,8 @@ export default function ExamPage() {
         navigate("/student/dashboard");
       }, 1500);
 
-    } catch {
+    } catch (e) {
+      toast.error(e.message);
       setSubmitError(true);
     } finally {
       setConfirmLoading(false);

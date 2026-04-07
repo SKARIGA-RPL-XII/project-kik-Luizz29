@@ -3,11 +3,7 @@ import DarkSelect from "components/ui/DarkSelect";
 import { Button as TailuxButton } from "components/ui";
 
 //MUI AREA //
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import { Snackbar, Alert } from "@mui/material";
+
 
 
 import {
@@ -15,33 +11,15 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-} from "@mui/material";
-
-import {
-  Dialog as HeadlessDialog,
-  DialogPanel,
-  Transition,
-  TransitionChild,
-} from "@headlessui/react";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
-import { Fragment } from "react";
-
-
-import { useDisclosure } from "hooks";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
 
 
-
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast as toastSonner } from 'sonner';
 
 export default function UserPage() {
   // ======================
@@ -67,22 +45,9 @@ export default function UserPage() {
   const [roles, setRoles] = useState([]);
   const [roleId, setRoleId] = useState("");
 
-  const [isSuccessOpen, { open: openSuccess, close: closeSuccess }] =
-    useDisclosure(false);
-
-  //TOAST
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "info", // "success", "error", "warning", "info"
-  });
 
 
 
-  // ======================
-  // MUI THEME (TAILUX AWARE)
-  // ======================
-  const muiTheme = useMuiTheme();
 
 
   // ======================
@@ -140,11 +105,7 @@ const handleSubmit = async (e) => {
   const token = localStorage.getItem("authToken");
 
   if (!token) {
-    setToast({
-      open: true,
-      message: "Token tidak ditemukan, silakan login ulang",
-      severity: "error",
-    });
+    toastSonner.error("Token tidak ditemukan, silakan login ulang");
     return;
   }
 
@@ -165,11 +126,7 @@ const handleSubmit = async (e) => {
     });
 
     if (!res.ok) {
-      setToast({
-        open: true,
-        message: "Gagal menambahkan user",
-        severity: "error",
-      });
+      toastSonner.error("Gagal menambahkan user");
       return;
     }
 
@@ -188,20 +145,10 @@ const handleSubmit = async (e) => {
     setPassword("");
     setRoleId("");
 
-    setToast({
-      open: true,
-      message: "User berhasil ditambahkan",
-      severity: "success",
-    });
+    toastSonner.success("User berhasil ditambahkan");
 
   } catch (err) {
-
-    setToast({
-      open: true,
-      message: "Terjadi kesalahan server" + err.message,
-      severity: "error",
-    });
-
+    toastSonner.error("Terjadi kesalahan server: " + err.message);
   }
 };
 
@@ -237,7 +184,7 @@ const handleSubmit = async (e) => {
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      alert("Token tidak ditemukan, silakan login ulang");
+      toastSonner.error("Token tidak ditemukan, silakan login ulang");
       return;
     }
 
@@ -254,11 +201,11 @@ const handleSubmit = async (e) => {
       // Update data table
       setUsers((prev) => prev.filter((u) => u.id !== selectedUserId));
 
-      openSuccess();
+      toastSonner.success("User berhasil dihapus");
       handleCloseDelete();
     } catch (error) {
       console.error(error);
-      alert("Failed to delete data");
+      toastSonner.error("Failed to delete data");
     }
   };
 
@@ -269,11 +216,11 @@ const handleSubmit = async (e) => {
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      alert("Token tidak ditemukan, silakan login ulang");
+      toastSonner.error("Token tidak ditemukan, silakan login ulang");
       return;
     }
 
-    await fetch(`${API_URL}/users/${selectedUser.id}`, {
+    const res = await fetch(`${API_URL}/users/${selectedUser.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -285,6 +232,11 @@ const handleSubmit = async (e) => {
       }),
     });
 
+    if (!res.ok) {
+      toastSonner.error("Gagal update user");
+      return;
+    }
+
     // Update state lokal (optimistic update)
     setUsers((prev) =>
       prev.map((u) =>
@@ -294,6 +246,7 @@ const handleSubmit = async (e) => {
       )
     );
 
+    toastSonner.success("User berhasil diupdate");
     handleCloseEdit();
   };
 
@@ -313,13 +266,9 @@ const handleSubmit = async (e) => {
       },
       {
         header: "Role",
-        cell: ({ row }) => {
-          const role = row.original.role;
-          if (!role || typeof role !== 'object' || !('rolenm' in role)) {
-            return "-";
-          }
-          return role.rolenm || "-";
-        },
+        accessorFn: (row) => row.role?.rolenm || "-",
+        id: "role",
+        cell: ({ getValue }) => getValue(),
       },
 
       {
@@ -327,24 +276,22 @@ const handleSubmit = async (e) => {
         id: "actions",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button
+            <TailuxButton
               variant="outlined"
               color="primary"
-              startIcon={<EditIcon />}
               size="small"
               onClick={() => handleOpenEdit(row.original)}
             >
               Edit
-            </Button>
+            </TailuxButton>
 
-            <Button
+            <TailuxButton
               variant="outlined"
               color="error"
-              startIcon={<DeleteIcon />}
               onClick={() => handleOpenDelete(row.original.id)}
             >
               Delete
-            </Button>
+            </TailuxButton>
           </div>
         ),
       },
@@ -352,11 +299,16 @@ const handleSubmit = async (e) => {
     []
   );
 
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const table = useReactTable({
     data: users,
     columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   // ======================
@@ -450,6 +402,15 @@ const handleSubmit = async (e) => {
           </div>
         </form>
 
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search..."
+            className="w-64 rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+
         {/* TABLE */}
         <div className="px-6 py-4 overflow-x-auto">
           <table
@@ -539,142 +500,63 @@ const handleSubmit = async (e) => {
             </div>
           </div>
         </div>
-        <ThemeProvider theme={muiTheme}>
-          <Dialog open={openDelete} onClose={handleCloseDelete}>
-            <DialogTitle>Hapus User</DialogTitle>
+        <Modal open={openDelete} onClose={handleCloseDelete}>
+          <ModalHeader>Hapus User</ModalHeader>
 
-            <DialogContent>
-              <DialogContentText>
-                Yakin mau menghapus user ini?
-                Data yang sudah dihapus tidak bisa dikembalikan.
-              </DialogContentText>
-            </DialogContent>
+          <ModalBody>
+            Yakin mau menghapus user ini?
+            Data yang sudah dihapus tidak bisa dikembalikan.
+          </ModalBody>
 
-            <DialogActions>
-              <Button onClick={handleCloseDelete}>
-                Batal
-              </Button>
-              <Button
-                onClick={handleConfirmDelete}
-                color="error"
-                variant="contained"
-              >
-                Hapus
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </ThemeProvider>
+          <ModalFooter>
+            <TailuxButton onClick={handleCloseDelete} variant="outlined">
+              Batal
+            </TailuxButton>
+            <TailuxButton
+              onClick={handleConfirmDelete}
+              color="error"
+            >
+              Hapus
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
-        <ThemeProvider theme={muiTheme}>
-          <Dialog open={openEdit} onClose={handleCloseEdit}>
-            <DialogTitle>Edit User</DialogTitle>
+        <Modal open={openEdit} onClose={handleCloseEdit}>
+          <ModalHeader>Edit User</ModalHeader>
 
-            <DialogContent className="space-y-4">
-              <input
-                className="
-          w-full rounded-lg px-4 py-2 text-sm
-          bg-card border border-divider
-          text-foreground
-          focus:outline-none focus:ring-2 focus:ring-primary/40
-        "
-                placeholder="Name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-              />
+          <ModalBody className="space-y-4">
+            <input
+              className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Name"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
 
-              <input
-                type="email"
-                className="
-          w-full rounded-lg px-4 py-2 text-sm
-          bg-card border border-divider
-          text-foreground
-          focus:outline-none focus:ring-2 focus:ring-primary/40
-        "
-                placeholder="Email"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-              />
-            </DialogContent>
+            <input
+              type="email"
+              className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Email"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+            />
+          </ModalBody>
 
-            <DialogActions>
-              <Button onClick={handleCloseEdit}>
-                Batal
-              </Button>
-              <Button
-                onClick={handleConfirmEdit}
-                variant="contained"
-              >
-                Simpan
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </ThemeProvider>
+          <ModalFooter>
+            <TailuxButton onClick={handleCloseEdit} variant="outlined">
+              Batal
+            </TailuxButton>
+            <TailuxButton onClick={handleConfirmEdit} color="primary">
+              Simpan
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
 
 
 
       </div>
 
-      <Transition appear show={isSuccessOpen} as={Fragment}>
-        <HeadlessDialog
-          as="div"
-          className="fixed inset-0 z-[100] flex items-center justify-center px-4"
-          onClose={closeSuccess}
-        >
-          <TransitionChild
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="absolute inset-0 bg-gray-900/50 dark:bg-black/40" />
-          </TransitionChild>
 
-          <TransitionChild
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95"
-            enterTo="opacity-100 scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100"
-            leaveTo="opacity-0 scale-95"
-          >
-            <DialogPanel className="relative w-full max-w-md rounded-lg bg-white px-6 py-10 text-center dark:bg-dark-700">
-              <CheckCircleIcon className="mx-auto size-24 text-success" />
-              <h3 className="mt-4 text-2xl font-semibold text-gray-800 dark:text-dark-100">
-                Delete Success
-              </h3>
-              <p className="mt-2 text-gray-600 dark:text-dark-300">
-                Data berhasil dihapus.
-              </p>
-              <button
-                onClick={closeSuccess}
-                className="mt-6 rounded-lg bg-green-500 px-5 py-2 text-sm font-medium text-white hover:bg-green-600 transition"
-              >
-                Close
-              </button>
-            </DialogPanel>
-          </TransitionChild>
-        </HeadlessDialog>
-      </Transition>
-
-<Snackbar
-  open={toast.open}
-  autoHideDuration={3000}
-  onClose={() => setToast({ ...toast, open: false })}
-  anchorOrigin={{ vertical: "top", horizontal: "right" }}
->
-  <Alert
-    severity={toast.severity}
-    variant="filled"
-    onClose={() => setToast({ ...toast, open: false })}
-  >
-    {toast.message}
-  </Alert>
-</Snackbar>
 
     </div>
 

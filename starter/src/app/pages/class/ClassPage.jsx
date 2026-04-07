@@ -3,29 +3,20 @@ import { Button as TailuxButton } from "components/ui";
 
 
 // MUI
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+
 
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 import { toast } from "sonner";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
 
 export default function ClassPage() {
   // ======================
@@ -46,10 +37,6 @@ export default function ClassPage() {
   const [editClassName, setEditClassName] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
 
-  // ======================
-  // THEME
-  // ======================
-  const muiTheme = useMuiTheme();
 
   // ======================
   // FETCH CLASS
@@ -97,13 +84,14 @@ export default function ClassPage() {
     });
 
     if (!res.ok) {
-      alert("Gagal menambahkan class");
+      toast.error("Gagal menambahkan class");
       return;
     }
 
     const json = await res.json();
     setClasses((prev) => [...prev, json.data]);
 
+    toast.success("Class berhasil ditambahkan");
     setClassName("");
     setIsActive(true);
   };
@@ -137,7 +125,7 @@ export default function ClassPage() {
     );
 
     if (!res.ok) {
-      alert("Gagal update class");
+      toast.error("Gagal update class");
       return;
     }
 
@@ -149,6 +137,7 @@ export default function ClassPage() {
       )
     );
 
+    toast.success("Class berhasil diupdate");
     setOpenEdit(false);
   };
 
@@ -171,7 +160,7 @@ const handleConfirmDelete = async () => {
 
     if (!res.ok) {
       const err = await res.json();
-      alert(err.message || "Gagal menghapus class");
+      toast.error(err.message || "Gagal menghapus class");
       return;
     }
 
@@ -196,17 +185,18 @@ const handleConfirmDelete = async () => {
       { header: "Class Name", accessorKey: "classnm" },
       {
         header: "Status",
-        accessorKey: "isactive",
+        accessorFn: (row) => (row.isactive ? "ACTIVE" : "INACTIVE"),
+        id: "status",
         cell: ({ getValue }) => (
           <span
             className={`
               px-2 py-0.5 rounded text-xs font-semibold
-              ${getValue()
+              ${getValue() === "ACTIVE"
                 ? "bg-success/20 text-success"
                 : "bg-danger/20 text-danger"}
             `}
           >
-            {getValue() ? "ACTIVE" : "INACTIVE"}
+            {getValue()}
           </span>
         ),
       },
@@ -222,26 +212,24 @@ const handleConfirmDelete = async () => {
         header: "Action",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button
+            <TailuxButton
               size="small"
               variant="outlined"
-              startIcon={<EditIcon />}
               onClick={() => handleOpenEdit(row.original)}
             >
               Edit
-            </Button>
-            <Button
+            </TailuxButton>
+            <TailuxButton
               size="small"
               variant="outlined"
               color="error"
-              startIcon={<DeleteIcon />}
               onClick={() => {
                 setSelectedId(row.original.classid);
                 setOpenDelete(true);
               }}
             >
               Delete
-            </Button>
+            </TailuxButton>
           </div>
         ),
       },
@@ -249,11 +237,16 @@ const handleConfirmDelete = async () => {
     []
   );
 
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const table = useReactTable({
     data: classes,
     columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   // ======================
@@ -302,6 +295,15 @@ const handleConfirmDelete = async () => {
           </div>
         </form>
 
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search..."
+            className="w-64 rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+
         {/* TABLE */}
         <div className="px-6 py-4 overflow-x-auto">
           <table className="w-full text-sm border">
@@ -338,52 +340,47 @@ const handleConfirmDelete = async () => {
       </div>
 
       {/* DELETE DIALOG */}
-      <ThemeProvider theme={muiTheme}>
-        <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-          <DialogTitle>Hapus Class</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Yakin mau menghapus class ini?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-            <Button
-              color="error"
-              variant="contained"
-              onClick={handleConfirmDelete}
-            >
-              Hapus
-            </Button>
-          </DialogActions>
-        </Dialog>
+      <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+        <ModalHeader>Hapus Class</ModalHeader>
+        <ModalBody>
+          Yakin mau menghapus class ini?
+        </ModalBody>
+        <ModalFooter>
+          <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+          <TailuxButton
+            color="error"
+            onClick={handleConfirmDelete}
+          >
+            Hapus
+          </TailuxButton>
+        </ModalFooter>
+      </Modal>
 
-        {/* EDIT DIALOG */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)}>
-          <DialogTitle>Edit Class</DialogTitle>
-          <DialogContent className="space-y-4">
+      {/* EDIT DIALOG */}
+      <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
+        <ModalHeader>Edit Class</ModalHeader>
+        <ModalBody className="space-y-4">
+          <input
+            className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            value={editClassName}
+            onChange={(e) => setEditClassName(e.target.value)}
+          />
+          <label className="flex items-center gap-2">
             <input
-              className="w-full rounded px-3 py-2 border"
-              value={editClassName}
-              onChange={(e) => setEditClassName(e.target.value)}
+              type="checkbox"
+              checked={editIsActive}
+              onChange={(e) => setEditIsActive(e.target.checked)}
             />
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={editIsActive}
-                onChange={(e) => setEditIsActive(e.target.checked)}
-              />
-              Active
-            </label>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button variant="contained" onClick={handleConfirmEdit}>
-              Simpan
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </ThemeProvider>
+            Active
+          </label>
+        </ModalBody>
+        <ModalFooter>
+          <TailuxButton onClick={() => setOpenEdit(false)} variant="outlined">Batal</TailuxButton>
+          <TailuxButton color="primary" onClick={handleConfirmEdit}>
+            Simpan
+          </TailuxButton>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

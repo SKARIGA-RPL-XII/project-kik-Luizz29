@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function ExamPage() {
 
@@ -30,7 +31,7 @@ export default function ExamPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.message || "Tidak bisa join ujian");
+        toast.error(err.message || "Tidak bisa join ujian");
         navigate("/student/dashboard");
         return;
       }
@@ -55,7 +56,7 @@ export default function ExamPage() {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timer);
-          alert("Waktu habis, ujian dikirim!");
+          toast.warning("Waktu habis, ujian dikirim!");
           return 0;
         }
         return t - 1;

@@ -2,30 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { Button as TailuxButton} from "components/ui";
 
 // MUI
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+
 
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function RoomPage() {
   // ======================
@@ -45,14 +35,6 @@ export default function RoomPage() {
   const [editRoomName, setEditRoomName] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
 
-  // TOAST
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-
-  const muiTheme = useMuiTheme();
 
   // ======================
   // FETCH
@@ -65,11 +47,7 @@ export default function RoomPage() {
     });
 
     if (!res.ok) {
-      setToast({
-        open: true,
-        message: "Gagal mengambil data room",
-        severity: "error",
-      });
+      toast.error("Gagal mengambil data room");
       return;
     }
 
@@ -102,11 +80,7 @@ export default function RoomPage() {
     });
 
     if (!res.ok) {
-      setToast({
-        open: true,
-        message: "Gagal menambahkan room",
-        severity: "error",
-      });
+      toast.error("Gagal menambahkan room");
       return;
     }
 
@@ -115,11 +89,7 @@ export default function RoomPage() {
     setRoomName("");
     setIsActive(true);
 
-    setToast({
-      open: true,
-      message: "Room berhasil ditambahkan",
-      severity: "success",
-    });
+    toast.success("Room berhasil ditambahkan");
   };
 
   // ======================
@@ -151,11 +121,7 @@ export default function RoomPage() {
     );
 
     if (!res.ok) {
-      setToast({
-        open: true,
-        message: "Gagal update room",
-        severity: "error",
-      });
+      toast.error("Gagal update room");
       return;
     }
 
@@ -168,11 +134,7 @@ export default function RoomPage() {
     );
 
     setOpenEdit(false);
-    setToast({
-      open: true,
-      message: "Room berhasil diupdate",
-      severity: "success",
-    });
+    toast.success("Room berhasil diupdate");
   };
 
   // ======================
@@ -190,11 +152,7 @@ export default function RoomPage() {
     );
 
     if (!res.ok) {
-      setToast({
-        open: true,
-        message: "Gagal menghapus room",
-        severity: "error",
-      });
+      toast.error("Gagal menghapus room");
       return;
     }
 
@@ -203,11 +161,7 @@ export default function RoomPage() {
     );
 
     setOpenDelete(false);
-    setToast({
-      open: true,
-      message: "Room berhasil dihapus",
-      severity: "success",
-    });
+    toast.success("Room berhasil dihapus");
   };
 
   // ======================
@@ -219,19 +173,20 @@ export default function RoomPage() {
       { header: "Room Name", accessorKey: "roomnm" },
       {
         header: "Status",
-        accessorKey: "isactive",
+        accessorFn: (row) => (row.isactive ? "ACTIVE" : "INACTIVE"),
+        id: "status",
         cell: ({ getValue }) => (
           <span
             className={`
               px-2 py-0.5 rounded text-xs font-semibold
               ${
-                getValue()
+                getValue() === "ACTIVE"
                   ? "bg-success/20 text-success"
                   : "bg-danger/20 text-danger"
               }
             `}
           >
-            {getValue() ? "ACTIVE" : "INACTIVE"}
+            {getValue()}
           </span>
         ),
       },
@@ -247,26 +202,24 @@ export default function RoomPage() {
         header: "Action",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button
+            <TailuxButton
               size="small"
               variant="outlined"
-              startIcon={<EditIcon />}
               onClick={() => handleOpenEdit(row.original)}
             >
               Edit
-            </Button>
-            <Button
+            </TailuxButton>
+            <TailuxButton
               size="small"
               variant="outlined"
               color="error"
-              startIcon={<DeleteIcon />}
               onClick={() => {
                 setSelectedId(row.original.roomid);
                 setOpenDelete(true);
               }}
             >
               Delete
-            </Button>
+            </TailuxButton>
           </div>
         ),
       },
@@ -274,11 +227,16 @@ export default function RoomPage() {
     []
   );
 
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const table = useReactTable({
     data: rooms,
     columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   // ======================
@@ -358,6 +316,15 @@ export default function RoomPage() {
           </div>
         </form>
 
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search..."
+            className="w-64 rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+
         {/* TABLE */}
         <div className="px-6 py-4 overflow-x-auto">
           <table className="w-full text-sm border">
@@ -394,33 +361,30 @@ export default function RoomPage() {
       </div>
 
       {/* DELETE & EDIT & TOAST */}
-      <ThemeProvider theme={muiTheme}>
+      
         {/* DELETE */}
-        <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-          <DialogTitle>Hapus Room</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
+        <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+          <ModalHeader>Hapus Room</ModalHeader>
+          <ModalBody>
               Yakin mau menghapus room ini?
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-            <Button
+          </ModalBody>
+          <ModalFooter>
+            <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+            <TailuxButton
               color="error"
-              variant="contained"
               onClick={handleConfirmDelete}
             >
               Hapus
-            </Button>
-          </DialogActions>
-        </Dialog>
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
         {/* EDIT */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)}>
-          <DialogTitle>Edit Room</DialogTitle>
-          <DialogContent className="space-y-4">
+        <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
+          <ModalHeader>Edit Room</ModalHeader>
+          <ModalBody className="space-y-4">
             <input
-              className="w-full rounded px-3 py-2 border"
+              className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               value={editRoomName}
               onChange={(e) => setEditRoomName(e.target.value)}
             />
@@ -432,8 +396,8 @@ export default function RoomPage() {
                 rounded-lg px-4 py-3 border
                 ${
                   editIsActive
-                    ? "border-success/60 bg-success/10"
-                    : "border-danger/60 bg-danger/10"
+                    ? "border-success/60 bg-success/10 text-success"
+                    : "border-divider bg-background text-muted"
                 }
               `}
             >
@@ -446,31 +410,14 @@ export default function RoomPage() {
                 Active Room
               </span>
             </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button variant="contained" onClick={handleConfirmEdit}>
+          </ModalBody>
+          <ModalFooter>
+            <TailuxButton onClick={() => setOpenEdit(false)} variant="outlined">Batal</TailuxButton>
+            <TailuxButton color="primary" onClick={handleConfirmEdit}>
               Simpan
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* TOAST */}
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={3000}
-          onClose={() => setToast({ ...toast, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert
-            severity={toast.severity}
-            variant="filled"
-            onClose={() => setToast({ ...toast, open: false })}
-          >
-            {toast.message}
-          </Alert>
-        </Snackbar>
-      </ThemeProvider>
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
     </div>
   );
 }

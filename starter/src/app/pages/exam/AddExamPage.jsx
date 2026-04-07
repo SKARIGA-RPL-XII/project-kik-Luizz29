@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button as TailuxButton } from "components/ui";
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+
 import { useNavigate } from "react-router";
 
 
@@ -14,24 +11,15 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function ExamPage() {
   const navigate = useNavigate();
 
 
-  const muiTheme = useMuiTheme();
   const token = localStorage.getItem("authToken");
 
   const [exams, setExams] = useState([]);
@@ -48,12 +36,6 @@ export default function ExamPage() {
   const [editExamnm, setEditExamnm] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDuration, setEditDuration] = useState("");
-
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
 
   // ================= FETCH =================
   const fetchExam = async () => {
@@ -94,7 +76,7 @@ export default function ExamPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal tambah exam", severity: "error" });
+      toast.error("Gagal tambah exam");
       return;
     }
 
@@ -104,7 +86,7 @@ export default function ExamPage() {
     setDescription("");
     setDuration("");
 
-    setToast({ open: true, message: "Exam berhasil ditambahkan", severity: "success" });
+    toast.success("Exam berhasil ditambahkan");
   };
 
   // ================= EDIT =================
@@ -124,14 +106,14 @@ export default function ExamPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal update exam", severity: "error" });
+      toast.error("Gagal update exam");
       return;
     }
 
     fetchExam();
     setOpenEdit(false);
 
-    setToast({ open: true, message: "Exam berhasil diupdate", severity: "success" });
+    toast.success("Exam berhasil diupdate");
   };
 
   // ================= DELETE =================
@@ -145,14 +127,14 @@ export default function ExamPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal hapus exam", severity: "error" });
+      toast.error("Gagal hapus exam");
       return;
     }
 
     fetchExam();
     setOpenDelete(false);
 
-    setToast({ open: true, message: "Exam berhasil dihapus", severity: "success" });
+    toast.success("Exam berhasil dihapus");
   };
 
   // ================= TABLE =================
@@ -181,10 +163,9 @@ const columns = useMemo(() => [
           </TailuxButton>
 
           {/* ===== EDIT ===== */}
-          <Button
+          <TailuxButton
             size="small"
             variant="outlined"
-            startIcon={<EditIcon />}
             onClick={() => {
               setEditId(exam.id);
               setEditExamnm(exam.examnm);
@@ -194,21 +175,20 @@ const columns = useMemo(() => [
             }}
           >
             Edit
-          </Button>
+          </TailuxButton>
 
           {/* ===== DELETE ===== */}
-          <Button
+          <TailuxButton
             size="small"
             color="error"
             variant="outlined"
-            startIcon={<DeleteIcon />}
             onClick={() => {
               setSelectedId(exam.id);
               setOpenDelete(true);
             }}
           >
             Delete
-          </Button>
+          </TailuxButton>
 
         </div>
       );
@@ -307,70 +287,54 @@ const columns = useMemo(() => [
       </div>
 
       {/* DIALOG + TOAST */}
-      <ThemeProvider theme={muiTheme}>
-
+      {/* DIALOG + TOAST */}
+      
         {/* DELETE */}
-        <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-          <DialogTitle>Hapus Exam</DialogTitle>
-          <DialogContent>
-            <DialogContentText>Yakin ingin menghapus exam ini?</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-            <Button color="error" variant="contained" onClick={handleConfirmDelete}>
-              Hapus
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+          <ModalHeader>Hapus Exam</ModalHeader>
+          <ModalBody>Yakin ingin menghapus exam ini?</ModalBody>
+          <ModalFooter>
+             <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+             <TailuxButton color="error" onClick={handleConfirmDelete}>
+               Hapus
+             </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
         {/* EDIT */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)}>
-          <DialogTitle>Edit Exam</DialogTitle>
+        <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
+          <ModalHeader>Edit Exam</ModalHeader>
 
-          <DialogContent className="space-y-4">
+          <ModalBody className="space-y-4">
 
             <input
-              className="w-full rounded-lg px-4 py-2 bg-card border border-divider"
+              className="w-full rounded-lg px-4 py-2 bg-card text-foreground border border-divider"
               value={editExamnm}
               onChange={(e) => setEditExamnm(e.target.value)}
             />
 
             <input
-              className="w-full rounded-lg px-4 py-2 bg-card border border-divider"
+              className="w-full rounded-lg px-4 py-2 bg-card text-foreground border border-divider"
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
             />
 
             <input
               type="number"
-              className="w-full rounded-lg px-4 py-2 bg-card border border-divider"
+              className="w-full rounded-lg px-4 py-2 bg-card text-foreground border border-divider"
               value={editDuration}
               onChange={(e) => setEditDuration(e.target.value)}
             />
 
-          </DialogContent>
+          </ModalBody>
 
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button variant="contained" onClick={handleConfirmEdit}>
-              Simpan
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* TOAST */}
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={3000}
-          onClose={() => setToast({ ...toast, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert severity={toast.severity} variant="filled">
-            {toast.message}
-          </Alert>
-        </Snackbar>
-
-      </ThemeProvider>
+          <ModalFooter>
+             <TailuxButton onClick={() => setOpenEdit(false)} variant="outlined">Batal</TailuxButton>
+             <TailuxButton color="primary" onClick={handleConfirmEdit}>
+               Simpan
+             </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
     </div>
   );

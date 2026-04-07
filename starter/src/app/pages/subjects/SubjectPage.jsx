@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button as TailuxButton } from "components/ui";
 //MUI AREA //
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+
 
 
 import {
@@ -12,19 +9,14 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 export default function UserPage() {
   // ======================
@@ -49,10 +41,6 @@ export default function UserPage() {
 
   //SELECT ROLE
 
-  // ======================
-  // MUI THEME (TAILUX AWARE)
-  // ======================
-  const muiTheme = useMuiTheme();
 
   // ======================
   // FETCH DATA
@@ -104,7 +92,7 @@ export default function UserPage() {
     });
 
     if (!res.ok) {
-      alert("Gagal menambahkan subject");
+      toast.error("Gagal menambahkan subject");
       return;
     }
 
@@ -112,6 +100,7 @@ export default function UserPage() {
 
     setUsers((prev) => [...prev, result.data]);
 
+    toast.success("Subject berhasil ditambahkan");
     setName("");
     setSubject("");
     setIsActive(true);
@@ -154,7 +143,7 @@ export default function UserPage() {
     });
 
     if (!res.ok) {
-      console.error("Gagal hapus subject");
+      toast.error("Gagal hapus subject");
       return;
     }
 
@@ -162,6 +151,7 @@ export default function UserPage() {
       prev.filter((s) => s.subject_id !== selectedUserId)
     );
 
+    toast.success("Subject berhasil dihapus");
     handleCloseDelete();
   };
 
@@ -170,7 +160,7 @@ export default function UserPage() {
   const handleConfirmEdit = async () => {
     if (!selectedUser) return;
 
-    await fetch(`${API_URL}/users/${selectedUser.id}`, {
+    const res = await fetch(`${API_URL}/users/${selectedUser.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -178,6 +168,11 @@ export default function UserPage() {
         email: editEmail,
       }),
     });
+
+    if (!res.ok) {
+      toast.error("Gagal update subject");
+      return;
+    }
 
     setUsers((prev) =>
       prev.map((u) =>
@@ -187,6 +182,7 @@ export default function UserPage() {
       )
     );
 
+    toast.success("Subject berhasil diupdate");
     handleCloseEdit();
   };
 
@@ -211,19 +207,19 @@ export default function UserPage() {
       },
       {
         header: "Status",
-        accessorKey: "is_active",
+        accessorFn: (row) => (row.is_active ? "ACTIVE" : "INACTIVE"),
+        id: "status",
         cell: ({ getValue }) => {
-          const active = getValue();
           return (
             <span
               className={`
               px-2 py-0.5 rounded text-xs font-semibold
-              ${active
+              ${getValue() === "ACTIVE"
                   ? "bg-success/20 text-success"
                   : "bg-danger/20 text-danger"}
             `}
             >
-              {active ? "ACTIVE" : "INACTIVE"}
+              {getValue()}
             </span>
           );
         },
@@ -242,25 +238,23 @@ export default function UserPage() {
         id: "actions",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button
+            <TailuxButton
               variant="outlined"
               color="primary"
-              startIcon={<EditIcon />}
               size="small"
               onClick={() => handleOpenEdit(row.original)}
             >
               Edit
-            </Button>
+            </TailuxButton>
 
-            <Button
+            <TailuxButton
               variant="outlined"
               color="error"
-              startIcon={<DeleteIcon />}
               size="small"
               onClick={() => handleOpenDelete(row.original.subject_id)}
             >
               Delete
-            </Button>
+            </TailuxButton>
           </div>
         ),
       },
@@ -269,11 +263,16 @@ export default function UserPage() {
   );
 
 
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const table = useReactTable({
     data: users,
     columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   // ======================
@@ -368,6 +367,15 @@ export default function UserPage() {
           </div>
         </form>
 
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search..."
+            className="w-64 rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+
         {/* TABLE */}
         <div className="px-6 py-4 overflow-x-auto">
           <table
@@ -457,76 +465,59 @@ export default function UserPage() {
             </div>
           </div>
         </div>
-        <ThemeProvider theme={muiTheme}>
-          <Dialog open={openDelete} onClose={handleCloseDelete}>
-            <DialogTitle>Hapus User</DialogTitle>
+        <Modal open={openDelete} onClose={handleCloseDelete}>
+          <ModalHeader>Hapus User</ModalHeader>
 
-            <DialogContent>
-              <DialogContentText>
-                Yakin mau menghapus user ini?
-                Data yang sudah dihapus tidak bisa dikembalikan.
-              </DialogContentText>
-            </DialogContent>
+          <ModalBody>
+            Yakin mau menghapus user ini?
+            Data yang sudah dihapus tidak bisa dikembalikan.
+          </ModalBody>
 
-            <DialogActions>
-              <Button onClick={handleCloseDelete}>
-                Batal
-              </Button>
-              <Button
-                onClick={handleConfirmDelete}
-                color="error"
-                variant="contained"
-              >
-                Hapus
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </ThemeProvider>
+          <ModalFooter>
+             <TailuxButton onClick={handleCloseDelete} variant="outlined">
+              Batal
+            </TailuxButton>
+            <TailuxButton
+              onClick={handleConfirmDelete}
+              color="error"
+            >
+              Hapus
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
-        <ThemeProvider theme={muiTheme}>
-          <Dialog open={openEdit} onClose={handleCloseEdit}>
-            <DialogTitle>Edit User</DialogTitle>
+        <Modal open={openEdit} onClose={handleCloseEdit}>
+          <ModalHeader>Edit User</ModalHeader>
 
-            <DialogContent className="space-y-4">
-              <input
-                className="
-          w-full rounded-lg px-4 py-2 text-sm
-          bg-card border border-divider
-          text-foreground
-          focus:outline-none focus:ring-2 focus:ring-primary/40
-        "
-                placeholder="Name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-              />
+          <ModalBody className="space-y-4">
+            <input
+              className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Name"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
 
-              <input
-                type="email"
-                className="
-          w-full rounded-lg px-4 py-2 text-sm
-          bg-card border border-divider
-          text-foreground
-          focus:outline-none focus:ring-2 focus:ring-primary/40
-        "
-                placeholder="Email"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-              />
-            </DialogContent>
+            <input
+              type="email"
+              className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Email"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+            />
+          </ModalBody>
 
-            <DialogActions>
-              <Button onClick={handleCloseEdit}>
-                Batal
-              </Button>
-              <Button
-                onClick={handleConfirmEdit}
-                variant="contained"
-              >
-                Simpan
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </ThemeProvider>
+          <ModalFooter>
+            <TailuxButton onClick={handleCloseEdit} variant="outlined">
+              Batal
+            </TailuxButton>
+            <TailuxButton
+              onClick={handleConfirmEdit}
+              color="primary"
+            >
+              Simpan
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
 
       </div>

@@ -2,30 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import DarkSelect from "components/ui/DarkSelect";
 import { Button as TailuxButton } from "components/ui";
 // MUI
-import { ThemeProvider } from "@mui/material/styles";
-import { useMuiTheme } from "hooks/useMuiTheme";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+
 
 import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
   flexRender,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Modal, ModalHeader, ModalBody, ModalFooter } from "components/ui/Modal";
 
-const API_URL = "http://localhost:8081";
+import { API_URL } from '../../../utils/config';
+import { toast } from 'sonner';
 
 const selectClass = `
   w-full rounded-lg px-4 py-2 text-sm
@@ -56,13 +46,6 @@ export default function SiswaPage() {
   const [editClassId, setEditClassId] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
 
-  const [toast, setToast] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-
-  const muiTheme = useMuiTheme();
   const token = localStorage.getItem("authToken");
 
   // ======================
@@ -86,7 +69,7 @@ export default function SiswaPage() {
     })
       .then((r) => r.json())
       .then((j) => setSiswas(j.data || []));
-  }, []);
+  }, [token]);
 
   // ======================
   // CREATE
@@ -108,7 +91,7 @@ export default function SiswaPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal menambahkan siswa", severity: "error" });
+      toast.error("Gagal menambahkan siswa");
       return;
     }
 
@@ -119,7 +102,7 @@ export default function SiswaPage() {
     setClassId("");
     setIsActive(true);
 
-    setToast({ open: true, message: "Siswa berhasil ditambahkan", severity: "success" });
+    toast.success("Siswa berhasil ditambahkan");
   };
 
   // ======================
@@ -139,7 +122,7 @@ export default function SiswaPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal update siswa", severity: "error" });
+      toast.error("Gagal update siswa");
       return;
     }
 
@@ -152,7 +135,7 @@ export default function SiswaPage() {
     );
 
     setOpenEdit(false);
-    setToast({ open: true, message: "Siswa berhasil diupdate", severity: "success" });
+    toast.success("Siswa berhasil diupdate");
   };
 
   // ======================
@@ -165,13 +148,13 @@ export default function SiswaPage() {
     });
 
     if (!res.ok) {
-      setToast({ open: true, message: "Gagal menghapus siswa", severity: "error" });
+      toast.error("Gagal menghapus siswa");
       return;
     }
 
     setSiswas((prev) => prev.filter((s) => s.siswaid !== selectedId));
     setOpenDelete(false);
-    setToast({ open: true, message: "Siswa berhasil dihapus", severity: "success" });
+    toast.success("Siswa berhasil dihapus");
   };
 
   // ======================
@@ -182,27 +165,26 @@ export default function SiswaPage() {
       { header: "ID", accessorKey: "siswaid" },
       {
         header: "User",
-        accessorKey: "userid",
-        cell: ({ getValue }) =>
-          users.find((u) => u.userid === getValue())?.username || "-",
+        accessorFn: (row) => users.find((u) => u.userid === row.userid)?.username || "-",
+        id: "username",
       },
       {
         header: "Class",
-        accessorKey: "classid",
-        cell: ({ getValue }) =>
-          classes.find((c) => c.classid === getValue())?.classnm || "-",
+        accessorFn: (row) => classes.find((c) => c.classid === row.classid)?.classnm || "-",
+        id: "classnm",
       },
       {
         header: "Status",
-        accessorKey: "isactive",
+        accessorFn: (row) => (row.isactive ? "ACTIVE" : "INACTIVE"),
+        id: "status",
         cell: ({ getValue }) => (
           <span
-            className={`px-2 py-0.5 rounded text-xs font-semibold ${getValue()
+            className={`px-2 py-0.5 rounded text-xs font-semibold ${getValue() === "ACTIVE"
               ? "bg-success/20 text-success"
               : "bg-danger/20 text-danger"
               }`}
           >
-            {getValue() ? "ACTIVE" : "INACTIVE"}
+            {getValue()}
           </span>
         ),
       },
@@ -210,10 +192,9 @@ export default function SiswaPage() {
         header: "Action",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button
+            <TailuxButton
               size="small"
               variant="outlined"
-              startIcon={<EditIcon />}
               onClick={() => {
                 setEditId(row.original.siswaid);
                 setEditClassId(row.original.classid);
@@ -222,19 +203,18 @@ export default function SiswaPage() {
               }}
             >
               Edit
-            </Button>
-            <Button
+            </TailuxButton>
+            <TailuxButton
               size="small"
               variant="outlined"
               color="error"
-              startIcon={<DeleteIcon />}
               onClick={() => {
                 setSelectedId(row.original.siswaid);
                 setOpenDelete(true);
               }}
             >
               Delete
-            </Button>
+            </TailuxButton>
           </div>
         ),
       },
@@ -242,11 +222,16 @@ export default function SiswaPage() {
     [users, classes]
   );
 
+  const [globalFilter, setGlobalFilter] = useState("");
+
   const table = useReactTable({
     data: siswas,
     columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   // ======================
@@ -316,6 +301,15 @@ export default function SiswaPage() {
           </div>
         </form>
 
+        <div className="px-6 pt-4 pb-2 flex justify-between items-center">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search..."
+            className="w-64 rounded-lg px-4 py-2 text-sm bg-card border border-divider text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+
         {/* TABLE */}
         <div className="px-6 py-4 overflow-x-auto">
           <table className="w-full text-sm border border-divider">
@@ -346,25 +340,23 @@ export default function SiswaPage() {
       </div>
 
       {/* DIALOG + TOAST */}
-      <ThemeProvider theme={muiTheme}>
+      
         {/* DELETE */}
-        <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-          <DialogTitle>Hapus Siswa</DialogTitle>
-          <DialogContent>
-            <DialogContentText>Yakin mau menghapus siswa ini?</DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDelete(false)}>Batal</Button>
-            <Button color="error" variant="contained" onClick={handleConfirmDelete}>
+        <Modal open={openDelete} onClose={() => setOpenDelete(false)}>
+          <ModalHeader>Hapus Siswa</ModalHeader>
+          <ModalBody>Yakin mau menghapus siswa ini?</ModalBody>
+          <ModalFooter>
+            <TailuxButton onClick={() => setOpenDelete(false)} variant="outlined">Batal</TailuxButton>
+            <TailuxButton color="error" onClick={handleConfirmDelete}>
               Hapus
-            </Button>
-          </DialogActions>
-        </Dialog>
+            </TailuxButton>
+          </ModalFooter>
+        </Modal>
 
         {/* EDIT */}
-        <Dialog open={openEdit} onClose={() => setOpenEdit(false)}>
-          <DialogTitle>Edit Siswa</DialogTitle>
-          <DialogContent className="space-y-4">
+        <Modal open={openEdit} onClose={() => setOpenEdit(false)}>
+          <ModalHeader>Edit Siswa</ModalHeader>
+          <ModalBody className="space-y-4">
             <select className={selectClass} value={editClassId} onChange={(e) => setEditClassId(e.target.value)}>
               {classes.map((c) => (
                 <option key={c.classid} value={c.classid}>{c.classnm}</option>
@@ -385,25 +377,12 @@ export default function SiswaPage() {
               />
               <span className="text-sm font-medium">Active Siswa</span>
             </label>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button variant="contained" onClick={handleConfirmEdit}>Simpan</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* TOAST */}
-        <Snackbar
-          open={toast.open}
-          autoHideDuration={3000}
-          onClose={() => setToast({ ...toast, open: false })}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <Alert severity={toast.severity} variant="filled">
-            {toast.message}
-          </Alert>
-        </Snackbar>
-      </ThemeProvider>
+          </ModalBody>
+          <ModalFooter>
+            <TailuxButton onClick={() => setOpenEdit(false)} variant="outlined">Batal</TailuxButton>
+            <TailuxButton color="primary" onClick={handleConfirmEdit}>Simpan</TailuxButton>
+          </ModalFooter>
+        </Modal>
     </div>
   );
 }
