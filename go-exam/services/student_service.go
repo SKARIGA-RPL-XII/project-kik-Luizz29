@@ -82,7 +82,7 @@ func (s *studentService) ValidateSecurity(userID int, examID int, lat float64, l
 	security, secErr := s.repo.GetExamSecurity(examID)
 	if secErr == nil && security != nil { // if security rules exist
 		if security.EnableIpCheck {
-			allowed := security.AllowedNetwork
+			allowed := strings.TrimSpace(security.AllowedNetwork)
 			if allowed != "" {
 				isMatched := false
 				if strings.Contains(allowed, "/") {

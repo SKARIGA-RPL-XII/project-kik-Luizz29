@@ -109,8 +109,8 @@ export default function UserPage() {
   //EDIT
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
-    setEditName(user.name);
-    setEditEmail(user.email);
+    setEditName(user.subject_name);
+    setEditEmail(user.subject_code);
     setOpenEdit(true);
   };
 
@@ -160,12 +160,16 @@ export default function UserPage() {
   const handleConfirmEdit = async () => {
     if (!selectedUser) return;
 
-    const res = await fetch(`${API_URL}/users/${selectedUser.id}`, {
+    const token = localStorage.getItem("authToken");
+
+    const res = await fetch(`${API_URL}/master/subject/${selectedUser.subject_id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, },
       body: JSON.stringify({
-        name: editName,
-        email: editEmail,
+        subject_nm: editName,
+        subject_code: editEmail,
       }),
     });
 
@@ -176,8 +180,8 @@ export default function UserPage() {
 
     setUsers((prev) =>
       prev.map((u) =>
-        u.id === selectedUser.id
-          ? { ...u, name: editName, email: editEmail }
+        u.subject_id === selectedUser.subject_id
+          ? { ...u, subject_name: editName, subject_code: editEmail }
           : u
       )
     );
@@ -359,11 +363,11 @@ export default function UserPage() {
 
           <div className="flex justify-end">
             <TailuxButton
-                    color="primary"
-                    type="submit"
-                >
-                    + Add Subject
-                </TailuxButton>
+              color="primary"
+              type="submit"
+            >
+              + Add Subject
+            </TailuxButton>
           </div>
         </form>
 
@@ -474,7 +478,7 @@ export default function UserPage() {
           </ModalBody>
 
           <ModalFooter>
-             <TailuxButton onClick={handleCloseDelete} variant="outlined">
+            <TailuxButton onClick={handleCloseDelete} variant="outlined">
               Batal
             </TailuxButton>
             <TailuxButton

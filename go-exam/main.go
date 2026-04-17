@@ -21,8 +21,8 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:5173",
-			"http://192.168.1.11:5173",
-			"https://senator-replacing-host-worked.trycloudflare.com", 
+			"http://192.168.1.112:5173",
+			"https://changed-lafayette-jones-python.trycloudflare.com", 
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},           
 		AllowHeaders:     []string{"Content-Type", "Authorization", "Origin", "Accept"},

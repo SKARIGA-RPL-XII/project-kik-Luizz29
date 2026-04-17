@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ConfirmModal } from "components/shared/ConfirmModal";
 import { useDisclosure } from "hooks";
 
+import { useAuthContext } from "app/contexts/auth/context";
 
 import { API_URL } from '../../../utils/config';
 import { toast } from 'sonner';
 
 export default function ExamPage() {
+  const { logout } = useAuthContext();
 
   //Modal
   const [isOpen, { open, close }] = useDisclosure();
@@ -188,6 +190,63 @@ export default function ExamPage() {
     return () => clearInterval(heartbeatInterval);
 
   }, [examID]);
+
+  // =============================
+  // KONTROL KEAMANAN KETAT
+  // =============================
+  useEffect(() => {
+    if (!examID) return;
+
+    // Fungsi untuk mengeluarkan siswa secara paksa
+    const handleCheatLogout = () => {
+      logout();
+      window.location.href = "/login";
+    };
+
+    // 1. Deteksi ganti tab (Visibility Change)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        toast.error("Melanggar aturan! Anda membuka tab/aplikasi lain. Anda dikeluarkan dari ujian.");
+        handleCheatLogout();
+      }
+    };
+
+    // 2. Deteksi keluar dari browser/buka desktop lain (Window Blur)
+    const handleBlur = () => {
+      toast.error("Melanggar aturan! Ujian kehilangan fokus layar. Anda dikeluarkan dari ujian.");
+      handleCheatLogout();
+    };
+
+    // 3. Mencegah klik kanan
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      toast.warning("Klik kanan dinonaktifkan selama ujian.");
+    };
+
+    // 4. Mencegah shortcut keyboard tertentu (F12, inspect element)
+    const handleKeyDown = (e) => {
+      if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) ||
+        (e.ctrlKey && (e.key === "U" || e.key === "u"))
+      ) {
+        e.preventDefault();
+        toast.warning("Shortcut keyboard dilarang selama ujian.");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleBlur);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleBlur);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [examID, logout]);
 
   // =============================
   // SAVE ANSWER (LOCAL ONLY)
