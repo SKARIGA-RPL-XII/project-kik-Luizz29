@@ -24,6 +24,7 @@ func (s *subjectService) Create(req models.CreateSubjectRequest) (*models.Subjec
 	subject := models.Subject{
 		SubjectNm:   req.SubjectNm,
 		SubjectCode: req.SubjectCode,
+		IsActive:    req.IsActive,
 	}
 	err := s.repo.Create(&subject)
 	return &subject, err
@@ -34,19 +35,19 @@ func (s *subjectService) GetAll() ([]models.Subject, error) {
 }
 
 func (s *subjectService) Update(id uint, req models.UpdateSubjectRequest) error {
-	subject, err := s.repo.FindByID(id)
-	if err != nil {
-		return err
-	}
+	data := make(map[string]interface{})
 
 	if req.SubjectNm != "" {
-		subject.SubjectNm = req.SubjectNm
+		data["subjectnm"] = req.SubjectNm
 	}
 	if req.SubjectCode != "" {
-		subject.SubjectCode = req.SubjectCode
+		data["subjectcode"] = req.SubjectCode
+	}
+	if req.IsActive != nil {
+		data["isactive"] = *req.IsActive
 	}
 
-	return s.repo.Update(subject)
+	return s.repo.Update(id, data)
 }
 
 func (s *subjectService) Delete(id uint) error {

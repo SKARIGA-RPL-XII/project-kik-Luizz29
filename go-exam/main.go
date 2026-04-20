@@ -22,7 +22,7 @@ func main() {
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://192.168.1.112:5173",
-			"https://changed-lafayette-jones-python.trycloudflare.com", 
+			"https://relatives-cloth-maintain-alot.trycloudflare.com", 
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},           
 		AllowHeaders:     []string{"Content-Type", "Authorization", "Origin", "Accept"},
@@ -68,6 +68,7 @@ func main() {
 	scheduleService := services.NewExamScheduleService(scheduleRepo)
 	examSecurityService := services.NewExamSecurityService(examSecurityRepo)
 	studentService := services.NewStudentService(studentRepo, siswaRepo)
+	dashboardService := services.NewDashboardService(db)
 
 	// ⭐ FIX FINAL
 	examService := services.NewExamService(
@@ -97,6 +98,7 @@ func main() {
 	scheduleHandler := handler.NewExamScheduleHandler(scheduleService)
 	examSecurityHandler := handler.NewExamSecurityHandler(examSecurityService)
 	studentHandler := handler.NewStudentHandler(studentService)
+	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	// ================= ROUTES =================
 	routes.SetupRoutes(
@@ -116,6 +118,7 @@ func main() {
 		scheduleHandler,
 		examSecurityHandler,
 		studentHandler,
+		dashboardHandler,
 	)
 
 	r.Run(":8081")
@@ -163,4 +166,4 @@ func main() {
 // 	// 3. Ubah tipe []byte menjadi string agar bisa dicetak dan disalin
 // 	fmt.Println("Password Asli :", password)
 // 	fmt.Println("Hasil Hash    :", string(hashedPassword))
-// }
+// }x	

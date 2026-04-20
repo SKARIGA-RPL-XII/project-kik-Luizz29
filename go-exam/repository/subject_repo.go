@@ -9,7 +9,7 @@ type SubjectRepository interface {
 	Create(subject *models.Subject) error
 	FindAll() ([]models.Subject, error)
 	FindByID(id uint) (*models.Subject, error)
-	Update(subject *models.Subject) error
+	Update(id uint, data map[string]interface{}) error
 	Delete(id uint) error
 }
 
@@ -37,8 +37,8 @@ func (r *subjectRepository) FindByID(id uint) (*models.Subject, error) {
 	return &subject, err
 }
 
-func (r *subjectRepository) Update(subject *models.Subject) error {
-	return r.db.Save(subject).Error
+func (r *subjectRepository) Update(id uint, data map[string]interface{}) error {
+	return r.db.Model(&models.Subject{}).Where("subjectid = ?", id).Updates(data).Error
 }
 
 func (r *subjectRepository) Delete(id uint) error {

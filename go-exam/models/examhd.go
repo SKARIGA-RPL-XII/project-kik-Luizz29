@@ -13,6 +13,7 @@ type ExamHd struct {
 	CreatedDate    time.Time `gorm:"column:createddate" json:"createddate"`
 	ExamToken      string    `gorm:"column:examtoken" json:"examtoken"`
 	TeacherID      *uint     `gorm:"column:teacherid" json:"teacherid"`
+	SubjectID      *uint     `gorm:"column:subjectid" json:"subjectid"`
 }
 
 func (ExamHd) TableName() string {
@@ -23,4 +24,5 @@ type ExamRequest struct {
 	ExamNm      string `json:"examnm"`
 	Description string `json:"description"`
 	Duration    int    `json:"duration"`
+	SubjectID   uint   `json:"subjectid"`
 }

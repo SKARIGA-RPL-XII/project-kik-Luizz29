@@ -24,6 +24,7 @@ func SetupRoutes(
 	examScheduleHandler *handler.ExamScheduleHandler,
 	examSecurityHandler *handler.ExamSecurityHandler,
 	studentHandler *handler.StudentHandler,
+	dashboardHandler *handler.DashboardHandler,
 
 ) {
 
@@ -176,6 +177,19 @@ func SetupRoutes(
 		student.GET("/exam/:examID/questions", studentHandler.GetExamQuestions)
 		student.POST("/exam/:examID/submit", studentHandler.SubmitExam)
 		student.GET("/exam/:examID/result", studentHandler.GetExamResult)
+	}
+
+	// ================= DASHBOARD =================
+	admin := r.Group("/admin")
+	admin.Use(middlewares.JWTAuth())
+	{
+		admin.GET("/dashboard-stats", dashboardHandler.GetAdminStats)
+	}
+
+	teacherDashboard := r.Group("/teacher")
+	teacherDashboard.Use(middlewares.JWTAuth())
+	{
+		teacherDashboard.GET("/dashboard-stats", dashboardHandler.GetTeacherStats)
 	}
 
 }

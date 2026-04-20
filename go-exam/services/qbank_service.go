@@ -11,7 +11,7 @@ type QuestionBankService interface {
 	GetAll() ([]models.QuestionBankHeader, error)
 	GetMyBanks(userID uint) ([]models.QuestionBankHeader, error)
 	Create(userID uint, req models.CreateQuestionBankRequest) (*models.QuestionBankHeader, error)
-	Delete(id uint) error
+	Delete(userID uint, id uint) error
 }
 
 type questionBankService struct {
@@ -33,15 +33,15 @@ func (s *questionBankService) GetMyBanks(userID uint) ([]models.QuestionBankHead
 func (s *questionBankService) Create(userID uint, req models.CreateQuestionBankRequest) (*models.QuestionBankHeader, error) {
 
 	// Override the TeacherID intelligently on the server level
-	teacherID, err := s.repo.GetTeacherID(userID)
+	teacher, err := s.repo.GetTeacher(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	header := models.QuestionBankHeader{
 		Title:       req.Title,
-		SubjectID:   req.SubjectID,
-		TeacherID:   teacherID,
+		SubjectID:   teacher.SubjectID,
+		TeacherID:   teacher.TeacherID,
 		Description: req.Description,
 		CreatedDate: time.Now(),
 		UpdatedDate: time.Now(),
@@ -59,6 +59,6 @@ func (s *questionBankService) Create(userID uint, req models.CreateQuestionBankR
 	return &header, err
 }
 
-func (s *questionBankService) Delete(id uint) error {
-	return s.repo.Delete(id)
+func (s *questionBankService) Delete(userID uint, id uint) error {
+	return s.repo.Delete(userID, id)
 }

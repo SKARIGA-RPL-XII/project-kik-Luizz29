@@ -7,7 +7,7 @@ import (
 type TeacherRepository interface {
 	GetAll() ([]models.Teacher, error)
 	Create(models.Teacher) (models.Teacher, error)
-	Update(models.Teacher) error
+	Update(uint, map[string]interface{}) error
 	Delete(uint) error
 	GetByID(uint) (models.Teacher, error)
 }
@@ -31,8 +31,8 @@ func (r *teacherRepository) Create(t models.Teacher) (models.Teacher, error) {
 	return t, err
 }
 
-func (r *teacherRepository) Update(t models.Teacher) error {
-	return r.db.Save(&t).Error
+func (r *teacherRepository) Update(id uint, data map[string]interface{}) error {
+	return r.db.Model(&models.Teacher{}).Where("teacherid = ?", id).Updates(data).Error
 }
 
 func (r *teacherRepository) Delete(id uint) error {

@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type ExamQuestion struct {
 	ID       uint   `gorm:"primaryKey" json:"id"`
 	ExamID   uint   `gorm:"column:examid" json:"examid"`
@@ -13,4 +15,10 @@ type ExamQuestion struct {
 
 func (ExamQuestion) TableName() string {
 	return "trexamquestion"
+}
+
+type ExamQuestionsResponse struct {
+	Questions []ExamQuestion `json:"questions"`
+	Duration  int            `json:"duration"`
+	StartTime *time.Time     `json:"start_time"`
 }

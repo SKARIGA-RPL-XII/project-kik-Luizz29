@@ -16,7 +16,7 @@ type StudentService interface {
 	GetDashboard(studentID int) (*models.StudentDashboardResponse, error)
 	JoinExam(studentID int, examID int, lat float64, lon float64, ip string) error
 	ValidateSecurity(userID int, examID int, lat float64, lon float64, clientIP string) error
-	GetExamQuestions(userID int, examID int) ([]models.ExamQuestion, error)
+	GetExamQuestions(userID int, examID int) (*models.ExamQuestionsResponse, error)
 	SubmitExam(userID int, examID int, answers map[uint]uint, lat float64, lon float64, clientIP string) error
 	GetExamResult(userID int, examID int) (*models.ExamResultResponse, error)
 }
@@ -126,19 +126,33 @@ func (s *studentService) ValidateSecurity(userID int, examID int, lat float64, l
 	return nil
 }
 
-func (s *studentService) GetExamQuestions(userID int, examID int) ([]models.ExamQuestion, error) {
+func (s *studentService) GetExamQuestions(userID int, examID int) (*models.ExamQuestionsResponse, error) {
 
 	studentID, err := s.siswaRepo.FindByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = s.repo.GetParticipant(studentID, examID)
+	participant, err := s.repo.GetParticipant(studentID, examID)
 	if err != nil {
 		return nil, errors.New("kamu bukan peserta ujian")
 	}
 
-	return s.repo.GetExamQuestions(examID)
+	header, err := s.repo.GetExamHeader(examID)
+	if err != nil {
+		return nil, err
+	}
+
+	questions, err := s.repo.GetExamQuestions(examID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.ExamQuestionsResponse{
+		Questions: questions,
+		Duration:  header.Duration,
+		StartTime: participant.StartTime,
+	}, nil
 }
 
 func (s *studentService) SubmitExam(userID int, examID int, answers map[uint]uint, lat float64, lon float64, clientIP string) error {

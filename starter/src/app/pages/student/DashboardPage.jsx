@@ -1,223 +1,245 @@
-import { useEffect, useState } from "react"
-import { Button, Spinner } from "components/ui"
-import { useNavigate } from "react-router-dom"
-import dayjs from "../../../utils/dayjs"
+import { useEffect, useState } from "react";
+import { Button, Spinner, Card, Badge } from "components/ui";
+import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "app/contexts/auth/context";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import dayjs from "../../../utils/dayjs";
+import { 
+    AcademicCapIcon, 
+    ArrowRightOnRectangleIcon, 
+    ClockIcon, 
+    CalendarDaysIcon,
+    ClipboardDocumentCheckIcon,
+    PlayIcon,
+    DocumentMagnifyingGlassIcon,
+    InformationCircleIcon
+} from "@heroicons/react/24/outline";
 
 import { API_URL } from '../../../utils/config';
 
 export default function StudentDashboardPage() {
-    const [loading, setLoading] = useState(true)
-    const [exams, setExams] = useState([])
-    const navigate = useNavigate()
+    const [parent] = useAutoAnimate();
+    const [loading, setLoading] = useState(true);
+    const [exams, setExams] = useState([]);
+    const navigate = useNavigate();
+    const { logout, user } = useAuthContext();
 
-    const token = localStorage.getItem("authToken")
+    const token = localStorage.getItem("authToken");
 
     const fetchDashboard = async () => {
         try {
             const res = await fetch(`${API_URL}/student/dashboard`, {
                 headers: { Authorization: `Bearer ${token}` }
-            })
-            const json = await res.json()
-            setExams(json.exams ?? [])
+            });
+            const json = await res.json();
+            setExams(json.exams ?? []);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        fetchDashboard()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        fetchDashboard();
+    }, []);
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-[60vh]">
-                <Spinner size={32} className="text-slate-400" />
+            <div className="flex justify-center items-center h-screen bg-white dark:bg-dark-900">
+                <div className="flex flex-col items-center gap-4">
+                    <Spinner size={40} className="text-primary" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-dark-300">Memuat dashboard...</p>
+                </div>
             </div>
-        )
+        );
     }
 
-    const active = exams.filter(e => e.status === "active")
-    const ready = exams.filter(e => e.status === "ready")
-    const finished = exams.filter(e => e.status === "finished")
+    const active = exams.filter(e => e.status === "active");
+    const ready = exams.filter(e => e.status === "ready" || e.status === "scheduled");
+    const finished = exams.filter(e => e.status === "finished");
 
-    const pendingCount = active.length + ready.length
-    const finishedCount = finished.length
+    const pendingCount = active.length + ready.length;
+    const finishedCount = finished.length;
 
     return (
-        <div className="bg-[#fcfcfc] min-h-screen pb-20 font-sans text-slate-900 border-t border-slate-200">
-            {/* HEADER */}
-            <div className="bg-white border-b border-slate-200 px-6 py-10 md:py-14">
-                <div className="max-w-5xl mx-auto w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
-                    <div className="flex flex-col gap-2.5">
-                        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-                            Dashboard Ujian
-                        </h1>
-                        <p className="text-slate-500 text-sm max-w-md leading-relaxed">
-                            Pantau jadwal serta laporan hasil evaluasi Anda secara aktual.
-                        </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-8">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Selesai</span>
-                            <span className="text-3xl font-light text-slate-900 tracking-tighter">{finishedCount}</span>
+        <div className="min-h-screen bg-slate-50 dark:bg-dark-900 pb-20 transition-colors duration-300">
+            {/* HEADER SECTION */}
+            <div className="bg-white dark:bg-dark-800 border-b border-slate-200 dark:border-dark-700 shadow-sm">
+                <div className="max-w-6xl mx-auto px-6 py-10 md:py-16">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="flex items-center gap-5">
+                            <div className="h-14 w-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
+                                <AcademicCapIcon className="h-8 w-8" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-dark-50">
+                                    Halo, {user?.name || "Siswa"}!
+                                </h1>
+                                <p className="text-sm text-slate-500 dark:text-dark-300 mt-1 font-medium">
+                                    Selamat datang kembali di pusat ujian Anda.
+                                </p>
+                            </div>
                         </div>
-                        <div className="w-px h-10 bg-slate-200"></div>
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">Menunggu</span>
-                            <span className="text-3xl font-light text-slate-900 tracking-tighter">{pendingCount}</span>
+
+                        <div className="flex items-center gap-8">
+                            <div className="flex gap-8 pr-8 border-r border-slate-200 dark:border-dark-700">
+                                <div className="text-center">
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-dark-400 uppercase tracking-widest mb-1">Selesai</p>
+                                    <p className="text-2xl font-bold text-slate-900 dark:text-dark-50">{finishedCount}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-dark-400 uppercase tracking-widest mb-1">Menunggu</p>
+                                    <p className="text-2xl font-bold text-slate-900 dark:text-dark-50">{pendingCount}</p>
+                                </div>
+                            </div>
+                            <Button 
+                                variant="outlined" 
+                                color="error" 
+                                className="rounded-xl px-5 py-2.5 font-bold text-xs uppercase tracking-widest flex items-center gap-2 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                onClick={logout}
+                            >
+                                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                                Keluar
+                            </Button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* MAIN CONTENT */}
-            <div className="max-w-5xl mx-auto w-full px-6 pt-12 flex flex-col gap-16 relative z-20">
-
+            {/* CONTENT SECTION */}
+            <div className="max-w-6xl mx-auto px-6 py-12 space-y-12" ref={parent}>
+                
                 {/* ACTIVE EXAMS */}
                 {active.length > 0 && (
-                    <Section title="Sedang Berlangsung">
-                        <div className="flex flex-col gap-3">
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                            <h2 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em]">Ujian Sedang Berlangsung</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {active.map(exam => (
-                                <ExamRow
-                                    key={exam.id}
-                                    exam={exam}
-                                    status="active"
-                                    actionLabel="Masuk Ujian"
-                                    actionFn={() => navigate(`/student/exam/${exam.id}`)}
+                                <ExamCard 
+                                    key={exam.id} 
+                                    exam={exam} 
+                                    status="active" 
+                                    onClick={() => navigate(`/student/exam/${exam.id}`)}
                                 />
                             ))}
                         </div>
-                    </Section>
+                    </div>
                 )}
 
                 {/* UPCOMING EXAMS */}
                 {ready.length > 0 && (
-                    <Section title="Akan Datang">
-                        <div className="flex flex-col gap-3">
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 rounded-full bg-slate-400 dark:bg-dark-400"></div>
+                            <h2 className="text-xs font-bold text-slate-500 dark:text-dark-300 uppercase tracking-[0.2em]">Jadwal Ujian</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {ready.map(exam => (
-                                <ExamRow
-                                    key={exam.id}
-                                    exam={exam}
-                                    status="ready"
-                                    actionLabel="Persiapan"
-                                    actionFn={() => navigate(`/student/exam/${exam.id}`)}
+                                <ExamCard 
+                                    key={exam.id} 
+                                    exam={exam} 
+                                    status="ready" 
+                                    onClick={() => navigate(`/student/exam/${exam.id}`)}
                                 />
                             ))}
                         </div>
-                    </Section>
+                    </div>
                 )}
 
                 {/* FINISHED EXAMS */}
-                <Section title="Riwayat Penyelesaian">
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="h-2 w-2 rounded-full bg-slate-300 dark:bg-dark-500"></div>
+                        <h2 className="text-xs font-bold text-slate-400 dark:text-dark-400 uppercase tracking-[0.2em]">Riwayat Ujian</h2>
+                    </div>
                     {finished.length === 0 ? (
-                        <div className="flex items-center justify-center py-16 px-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                            <p className="text-slate-400 text-sm">Arsip ujian kosong.</p>
+                        <div className="p-16 border-2 border-dashed border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-800 flex flex-col items-center gap-4 rounded-3xl">
+                            <div className="p-4 rounded-full bg-slate-50 dark:bg-dark-900 text-slate-300 dark:text-dark-600">
+                                <ClipboardDocumentCheckIcon className="h-10 w-10" />
+                            </div>
+                            <p className="text-sm font-medium text-slate-400 dark:text-dark-400">Belum ada riwayat ujian pengerjaan.</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {finished.map(exam => (
-                                <ExamRow
-                                    key={exam.id}
-                                    exam={exam}
-                                    status="finished"
-                                    actionLabel="Lihat Hasil"
-                                    actionFn={() => navigate(`/student/exam/${exam.id}/result`)}
+                                <ExamCard 
+                                    key={exam.id} 
+                                    exam={exam} 
+                                    status="finished" 
+                                    onClick={() => navigate(`/student/exam/${exam.id}/result`)}
                                 />
                             ))}
                         </div>
                     )}
-                </Section>
+                </div>
 
             </div>
         </div>
-    )
+    );
 }
 
-function Section({ title, children }) {
-    return (
-        <div className="flex flex-col gap-4">
-            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest border-b border-slate-200 pb-3">
-                {title}
-            </h2>
-            {children}
-        </div>
-    )
-}
-
-function ExamRow({ exam, status, actionLabel, actionFn }) {
+function ExamCard({ exam, status, onClick }) {
+    const isFinished = status === "finished";
+    const isActive = status === "active";
     
-    // Status visual mapping
-    let icon, statusTag;
-    
-    switch (status) {
-        case "active":
-            icon = (
-                <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                </div>
-            )
-            statusTag = <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold tracking-widest text-blue-700 bg-blue-50 border border-blue-200 uppercase"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>Terbuka</span>
-            break;
-        case "ready":
-            icon = (
-                <div className="h-10 w-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 border border-slate-200">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                </div>
-            )
-            statusTag = <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-widest text-slate-600 bg-slate-100 border border-slate-200 uppercase">Menunggu</span>
-            break;
-        case "finished":
-        default:
-            icon = (
-                <div className="h-10 w-10 rounded-full bg-white text-slate-400 flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                </div>
-            )
-            statusTag = <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-widest text-slate-500 bg-slate-50 border border-slate-200 uppercase">Selesai</span>
-            break;
-    }
-
     return (
-        <div 
-            onClick={() => {
-                actionFn && actionFn()
-            }}
-            className="group flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-xl p-4 hover:border-slate-300 hover:shadow-sm transition-all duration-200 cursor-pointer"
+        <Card 
+            onClick={onClick}
+            skin="shadow"
+            className={`p-6 transition-all duration-300 rounded-3xl cursor-pointer flex flex-col justify-between min-h-[200px] border border-transparent hover:scale-[1.02] active:scale-95
+                ${isActive ? 'bg-indigo-600 dark:bg-indigo-600 shadow-lg shadow-indigo-500/20' : 'bg-white dark:bg-dark-800 border-slate-100 dark:border-dark-700 hover:border-indigo-200 dark:hover:border-indigo-500/50'}
+            `}
         >
-            <div className="flex items-center gap-4">
-                {icon}
-                <div className="flex flex-col gap-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="font-medium text-slate-900 text-[15px] group-hover:text-blue-600 transition-colors">
-                            {exam.title}
-                        </h3>
-                        {statusTag}
+            <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                    <Badge 
+                        variant="flat" 
+                        color={isActive ? 'flat' : isFinished ? 'success' : 'flat'}
+                        className={`font-bold text-[9px] uppercase tracking-widest px-3 py-1 rounded-lg
+                            ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-dark-700 text-slate-500 dark:text-dark-300'}
+                        `}
+                    >
+                        {status === 'active' ? 'Sedang Berjalan' : status === 'finished' ? 'Selesai' : 'Mendatang'}
+                    </Badge>
+                </div>
+
+                <div className="space-y-1">
+                    <h3 className={`text-lg font-bold leading-tight ${isActive ? 'text-white' : 'text-slate-900 dark:text-dark-50'}`}>
+                        {exam.title}
+                    </h3>
+                    <p className={`text-xs line-clamp-2 ${isActive ? 'text-indigo-100' : 'text-slate-500 dark:text-dark-300'}`}>
+                        {exam.description || "Ujian evaluasi capaian belajar siswa."}
+                    </p>
+                </div>
+            </div>
+
+            <div className="pt-6 space-y-4">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                        <CalendarDaysIcon className={`h-4 w-4 ${isActive ? 'text-indigo-200' : 'text-slate-400 dark:text-dark-400'}`} />
+                        <span className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-600 dark:text-dark-100'}`}>
+                            {dayjs.utc(exam.start_time).tz("Asia/Jakarta").format("DD MMM")}
+                        </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 text-[13px] text-slate-500 mt-0.5">
-                        <span className="flex items-center gap-1.5 opacity-80">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            {dayjs.utc(exam.start_time).tz("Asia/Jakarta").format("DD MMM YYYY, HH:mm")}
+                    <div className="flex items-center gap-1.5">
+                        <ClockIcon className={`h-4 w-4 ${isActive ? 'text-indigo-200' : 'text-slate-400 dark:text-dark-400'}`} />
+                        <span className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-600 dark:text-dark-100'}`}>
+                            {exam.duration} Menit
                         </span>
                     </div>
                 </div>
-            </div>
 
-            <div className="mt-4 md:mt-0 flex items-center md:pl-6">
-                <Button
-                    size="sm"
-                    variant="outlined"
-                    className={`rounded-lg px-4 shadow-sm text-xs font-semibold py-1.5 transition-all 
-                        ${status === 'active' ? 'bg-blue-600 text-white hover:bg-blue-700 border-transparent' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'}`}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        actionFn && actionFn()
-                    }}
-                >
-                    {actionLabel}
-                </Button>
+                <div className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all font-bold text-xs uppercase tracking-widest
+                    ${isActive ? 'bg-white text-indigo-600 shadow-sm' : 'bg-slate-50 dark:bg-dark-900 text-slate-400 dark:text-dark-400 group-hover:bg-indigo-600 dark:group-hover:bg-indigo-500 group-hover:text-white'}
+                `}>
+                    <span>
+                        {isActive ? 'Mulai Sekarang' : isFinished ? 'Hasil Ujian' : 'Lihat Detail'}
+                    </span>
+                    {isActive ? <PlayIcon className="h-4 w-4 animate-pulse" /> : isFinished ? <DocumentMagnifyingGlassIcon className="h-4 w-4" /> : <InformationCircleIcon className="h-4 w-4" />}
+                </div>
             </div>
-        </div>
-    )
+        </Card>
+    );
 }

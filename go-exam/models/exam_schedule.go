@@ -23,5 +23,6 @@ func (ExamSchedule) TableName() string {
 type CreateExamScheduleRequest struct {
 	StartTime string `json:"startTime"`
 	EndTime   string `json:"endTime"`
+	Duration  int    `json:"duration"`
 }
 

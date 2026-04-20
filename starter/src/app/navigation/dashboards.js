@@ -6,14 +6,32 @@ import { getRoleId } from 'utils/auth'
 const ROOT_MASTER = '/master'
 const roleId = getRoleId()
 
-export const dashboards =
+export const dashboards = (roleId === 1 || roleId === 2)
+  ? {
+      id: 'dashboards',
+      type: NAV_TYPE_ROOT,
+      path: '/dashboards',
+      title: 'Dashboards',
+      Icon: DashboardsIcon,
+      childs: [
+        {
+          id: 'dashboards.home',
+          path: '/dashboards/home',
+          type: NAV_TYPE_ITEM,
+          title: 'Home',
+          Icon: HomeIcon,
+        },
+      ],
+    }
+  : null;
+
+export const master_admin =
   roleId === 1
     ? {
         id: 'master',
         type: NAV_TYPE_ROOT,
         path: '/master',
-        title: 'Master',
-        transKey: 'nav.master.master',
+        title: 'Master Data',
         Icon: DashboardsIcon,
         childs: [
           {
@@ -21,7 +39,6 @@ export const dashboards =
             path: `${ROOT_MASTER}/users`,
             type: NAV_TYPE_ITEM,
             title: 'Master User',
-            transKey: 'nav.master.users',
             Icon: HomeIcon,
           },
           {
@@ -29,7 +46,6 @@ export const dashboards =
             path: `${ROOT_MASTER}/subject`,
             type: NAV_TYPE_ITEM,
             title: 'Subject',
-            transKey: 'nav.master.subject',
             Icon: HomeIcon,
           },
           {
@@ -37,7 +53,6 @@ export const dashboards =
             path: `${ROOT_MASTER}/class`,
             type: NAV_TYPE_ITEM,
             title: 'Class',
-            transKey: 'nav.master.class',
             Icon: HomeIcon,
           },
           {
@@ -45,7 +60,6 @@ export const dashboards =
             path: `${ROOT_MASTER}/room`,
             type: NAV_TYPE_ITEM,
             title: 'Room',
-            transKey: 'nav.master.room',
             Icon: HomeIcon,
           },
           {
@@ -53,7 +67,6 @@ export const dashboards =
             path: `${ROOT_MASTER}/siswa`,
             type: NAV_TYPE_ITEM,
             title: 'Siswa',
-            transKey: 'nav.master.siswa',
             Icon: HomeIcon,
           },
           {
@@ -61,9 +74,8 @@ export const dashboards =
             path: `${ROOT_MASTER}/teacher`,
             type: NAV_TYPE_ITEM,
             title: 'Teacher',
-            transKey: 'nav.master.teacher',
             Icon: HomeIcon,
           },
         ],
       }
-    : null
+    : null;

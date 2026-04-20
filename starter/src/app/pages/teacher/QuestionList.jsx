@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Button as TailuxButton } from "components/ui";
-import DarkSelect from "components/ui/DarkSelect";
 
 // MUI
 
@@ -19,10 +18,6 @@ import { API_URL } from '../../../utils/config';
 import { toast } from 'sonner';
 
 export default function QuestionList() {
-    const questionTypeOptions = [
-        { value: "mcq", label: "Pilihan Ganda" },
-        { value: "ESSAY", label: "Essay" },
-    ];
 
     const [openManage, setOpenManage] = useState(false);
     // const [selectedQuestion, setSelectedQuestion] = useS tate(null);
@@ -175,12 +170,6 @@ const handleManage = async (question) => {
         () => [
             { header: "ID", accessorKey: "detailid" },
             { header: "Question", accessorKey: "question" },
-            {
-                header: "Type",
-                accessorKey: "type",
-                cell: ({ getValue }) =>
-                    getValue() === "mcq" ? "Pilihan Ganda" : "Essay",
-            },
             { header: "Score", accessorKey: "score" },
 
             {
@@ -255,15 +244,7 @@ const handleManage = async (question) => {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Tipe Soal</label>
-                        <DarkSelect
-                            placeholder="Pilih tipe soal"
-                            value={type}
-                            options={questionTypeOptions}
-                            onChange={setType}
-                        />
-                    </div>
+                    {/* Tipe Soal dihapus karena selalu mcq */}
 
                     {type === "mcq" && (
                         <div className="space-y-4 bg-black/20 p-5 rounded-xl border border-divider">

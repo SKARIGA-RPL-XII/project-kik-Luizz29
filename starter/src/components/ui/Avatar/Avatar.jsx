@@ -47,8 +47,7 @@ const Avatar = forwardRef((props, ref) => {
   let chars;
 
   if (name) {
-    chars = name
-      .match(/\b(\w)/g)
+    chars = (name.match(/\b(\w)/g) || [])
       .slice(0, 2)
       .join("");
     if (initialColor === "auto") {

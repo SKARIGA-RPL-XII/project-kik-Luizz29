@@ -56,6 +56,10 @@ type ExamService interface {
 
 func (s *examService) Create(req models.ExamRequest, adminID uint) (*models.ExamHd, error) {
 
+	if req.ExamNm == "" || req.Description == "" || req.Duration <= 0 || req.SubjectID == 0 {
+		return nil, errors.New("nama, deskripsi, durasi, dan mata pelajaran wajib diisi")
+	}
+
 	token := utils.GenerateExamToken()
 
 	exam := models.ExamHd{
@@ -66,6 +70,7 @@ func (s *examService) Create(req models.ExamRequest, adminID uint) (*models.Exam
 		ExamToken:   token,
 		CreatedBy:   adminID,
 		CreatedDate: time.Now(),
+		SubjectID:   &req.SubjectID,
 	}
 
 	err := s.repo.Create(&exam)
@@ -92,9 +97,14 @@ func (s *examService) Update(id uint, req models.ExamRequest) error {
 		return errors.New("exam already published")
 	}
 
+	if req.ExamNm == "" || req.Description == "" || req.Duration <= 0 || req.SubjectID == 0 {
+		return errors.New("nama, deskripsi, durasi, dan mata pelajaran wajib diisi")
+	}
+
 	exam.ExamNm = req.ExamNm
 	exam.Description = req.Description
 	exam.Duration = req.Duration
+	exam.SubjectID = &req.SubjectID
 
 	return s.repo.Update(exam)
 }
@@ -280,6 +290,15 @@ func (s *examService) PublishExam(examID uint) error {
 	return s.repo.PublishExam(examID)
 }
 func (s *examService) AssignTeacher(examID uint, teacherID uint) error {
+	exam, err := s.repo.GetByID(examID)
+	if err != nil {
+		return err
+	}
+
+	if exam.QuestionBankID != nil {
+		return errors.New("tidak bisa mengganti guru karena soal ujian sudah disubmit")
+	}
+
     return s.repo.AssignTeacher(examID, teacherID)
 }
 

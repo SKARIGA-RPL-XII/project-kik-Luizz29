@@ -32,8 +32,7 @@ func (QuestionBankDetail) TableName() string {
 
 type CreateQuestionBankRequest struct {
 	Title       string `json:"title" binding:"required"`
-	SubjectID   uint   `json:"subjectid" binding:"required"`
-	TeacherID   uint   `json:"teacherid" binding:"required"`
+	SubjectID   uint   `json:"subjectid"`
 	Description string `json:"description"`
 
 	Details []CreateQuestionDetailRequest `json:"details"`

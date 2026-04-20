@@ -29,15 +29,26 @@ func (r *selectRepository) GetRoles() ([]models.SelectRole, error) {
 	return roles, err
 }
 
-func (r *selectRepository) GetUsers() ([]models.SelectUser, error) {
+func (r *selectRepository) GetUsers(roleName string) ([]models.SelectUser, error) {
 	var users []models.SelectUser
 
-	err := r.db.Raw(`
-		SELECT id AS userid, name AS username
-		FROM users
-		WHERE isactive = true
-		ORDER BY name ASC
-	`).Scan(&users).Error
+	query := `
+		SELECT u.id AS userid, u.name AS username
+		FROM users u
+		LEFT JOIN msrole r ON u.roleid = r.roleid
+		WHERE u.isactive = true
+	`
+
+	args := []interface{}{}
+
+	if roleName != "" {
+		query += " AND r.rolenm = ?"
+		args = append(args, roleName)
+	}
+
+	query += " ORDER BY u.name ASC"
+
+	err := r.db.Raw(query, args...).Scan(&users).Error
 
 	return users, err
 }

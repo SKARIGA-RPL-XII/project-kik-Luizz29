@@ -7,11 +7,11 @@ import (
 
 type SelectService interface {
 	GetRoles() ([]models.SelectRole, error)
-	GetUsers() ([]models.SelectUser, error)
+	GetUsers(roleName string) ([]models.SelectUser, error)
 	GetClasses() ([]models.SelectClass, error)
 
 	GetSubjects() ([]models.SelectSubject, error) 
-	GetTeachers() ([]models.SelectTeacher, error)
+	GetTeachers(subjectID uint) ([]models.SelectTeacher, error)
 }
 
 
@@ -27,8 +27,8 @@ func (s *selectService) GetRoles() ([]models.SelectRole, error) {
 	return s.repo.GetRoles()
 }
 
-func (s *selectService) GetUsers() ([]models.SelectUser, error) {
-	return s.repo.GetUsers()
+func (s *selectService) GetUsers(roleName string) ([]models.SelectUser, error) {
+	return s.repo.GetUsers(roleName)
 }
 
 func (s *selectService) GetClasses() ([]models.SelectClass, error) {
@@ -39,7 +39,7 @@ func (s *selectService) GetSubjects() ([]models.SelectSubject, error) {
 	return s.repo.GetSubjects()
 }
 
-func (s *selectService) GetTeachers() ([]models.SelectTeacher, error) {
-	return s.repo.GetTeachers()
+func (s *selectService) GetTeachers(subjectID uint) ([]models.SelectTeacher, error) {
+	return s.repo.GetTeachers(subjectID)
 }
 

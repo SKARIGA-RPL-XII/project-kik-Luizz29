@@ -31,6 +31,7 @@ func (r *StudentRepository) GetStudentExams(studentID int) ([]models.StudentDash
     h.examnm as title,
     s.starttime as start_time,
     s.endtime as end_time,
+    h.duration as duration,
     p.status as participant_status
 `).
 		Joins("JOIN trexamhd h ON h.id = p.examid").
@@ -71,6 +72,12 @@ func (r *StudentRepository) GetExamSchedule(examID int) (*models.ExamSchedule, e
 	return &s, err
 }
 
+func (r *StudentRepository) GetExamHeader(examID int) (*models.ExamHd, error) {
+	var h models.ExamHd
+	err := r.db.Table("trexamhd").Where("id = ?", examID).First(&h).Error
+	return &h, err
+}
+
 func (r *StudentRepository) GetExamSecurity(examID int) (*models.ExamSecurity, error) {
 	var sec models.ExamSecurity
 	err := r.db.Table("trexamsecurity").Where("examid = ?", examID).First(&sec).Error
@@ -78,6 +85,15 @@ func (r *StudentRepository) GetExamSecurity(examID int) (*models.ExamSecurity, e
 }
 
 func (r *StudentRepository) UpdateParticipantStatus(id int, status string) error {
+	if status == "InProgress" {
+		// Set status and starttime only if starttime is NULL (first time join)
+		return r.db.Table("trexamparticipant").
+			Where("id = ?", id).
+			Updates(map[string]interface{}{
+				"status":    status,
+				"starttime": gorm.Expr("COALESCE(starttime, ?)", time.Now()),
+			}).Error
+	}
 
 	return r.db.
 		Table("trexamparticipant").

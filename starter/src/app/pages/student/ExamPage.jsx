@@ -35,7 +35,7 @@ export default function ExamPage() {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(60 * 60);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   const joinedRef = useRef(false);
 
@@ -110,7 +110,25 @@ export default function ExamPage() {
     }
 
     const data = await res.json();
-    setQuestions(data);
+    setQuestions(data.questions || []);
+
+    // Timer calculation based on duration from trexamschedule
+    if (data.duration > 0) {
+      const totalSeconds = data.duration * 60;
+
+      if (data.start_time) {
+        const startTime = new Date(data.start_time).getTime();
+        const now = new Date().getTime();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        const remaining = totalSeconds - elapsedSeconds;
+        setTimeLeft(remaining > 0 ? remaining : 0);
+      } else {
+        setTimeLeft(totalSeconds);
+      }
+    } else {
+      // fallback if duration is 0 or not set
+      setTimeLeft(60 * 60); 
+    }
   };
 
   // =============================
@@ -195,7 +213,7 @@ export default function ExamPage() {
   // KONTROL KEAMANAN KETAT
   // =============================
   useEffect(() => {
-    if (!examID) return;
+    if (!examID || loading) return;
 
     // Fungsi untuk mengeluarkan siswa secara paksa
     const handleCheatLogout = () => {
@@ -235,18 +253,23 @@ export default function ExamPage() {
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleBlur);
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("keydown", handleKeyDown);
+    // Berikan jeda 3 detik sebelum mengaktifkan penjagaan
+    // Untuk memberi waktu browser kembali fokus setelah mengizinkan lokasi/geolokasi
+    const securityTimeout = setTimeout(() => {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("blur", handleBlur);
+      document.addEventListener("contextmenu", handleContextMenu);
+      document.addEventListener("keydown", handleKeyDown);
+    }, 3000);
 
     return () => {
+      clearTimeout(securityTimeout);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [examID, logout]);
+  }, [examID, logout, loading]);
 
   // =============================
   // SAVE ANSWER (LOCAL ONLY)
@@ -321,25 +344,21 @@ export default function ExamPage() {
   // TIMER
   // =============================
   useEffect(() => {
+    if (loading || timeLeft <= 0) return;
 
     const timer = setInterval(() => {
-
       setTimeLeft((t) => {
-
         if (t <= 1) {
           clearInterval(timer);
           submitExam(); // auto submit
           return 0;
         }
-
         return t - 1;
       });
-
     }, 1000);
 
     return () => clearInterval(timer);
-
-  }, []);
+  }, [loading, timeLeft === 0]); 
 
   const formatTime = (s) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(
@@ -484,11 +503,15 @@ export default function ExamPage() {
               <button
                 className="px-6 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
                 onClick={() => {
+                  const answeredCount = Object.keys(answers).length;
+                  if (answeredCount < questions.length) {
+                    toast.error(`Ada ${questions.length - answeredCount} soal yang belum dijawab!`);
+                    return;
+                  }
                   setSubmitSuccess(false);
                   setSubmitError(false);
                   open();
                 }}
-
               >
                 Submit Ujian
               </button>

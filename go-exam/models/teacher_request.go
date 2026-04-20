@@ -8,8 +8,8 @@ type CreateTeacherRequest struct {
 }
 
 type UpdateTeacherRequest struct {
-	TeacherNm string `json:"teachernm"`
-	UserID    uint   `json:"userid"`
-	SubjectID uint   `json:"subjectid"` // sebaiknya juga ada
-	IsActive  bool   `json:"isactive"`
+	TeacherNm *string `json:"teachernm"`
+	UserID    *uint   `json:"userid"`
+	SubjectID *uint   `json:"subjectid"`
+	IsActive  *bool   `json:"isactive"`
 }

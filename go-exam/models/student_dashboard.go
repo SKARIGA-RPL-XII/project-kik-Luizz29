@@ -16,6 +16,7 @@ type StudentDashboardExam struct {
 	StartTime time.Time `json:"start_time" gorm:"column:start_time"`
 
 	EndTime time.Time `json:"end_time" gorm:"column:end_time"`
+	Duration int `json:"duration" gorm:"column:duration"`
 
 	Status string `json:"status" gorm:"-"`
 

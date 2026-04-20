@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/Luizz29/go-gin-project/models"
 	"gorm.io/gorm"
 )
@@ -8,9 +10,10 @@ import (
 type QuestionBankRepository interface {
 	GetAll() ([]models.QuestionBankHeader, error)
 	GetMyBanks(userID uint) ([]models.QuestionBankHeader, error)
-	GetTeacherID(userID uint) (uint, error)
+	GetTeacher(userID uint) (*models.Teacher, error)
+	GetByID(id uint) (*models.QuestionBankHeader, error)
 	Create(data *models.QuestionBankHeader) error
-	Delete(id uint) error
+	Delete(userID uint, id uint) error
 }
 
 type questionBankRepository struct {
@@ -33,6 +36,9 @@ func (r *questionBankRepository) GetMyBanks(userID uint) ([]models.QuestionBankH
 
 	var teacher models.Teacher
 	if err := r.db.Where("userid = ?", userID).First(&teacher).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return []models.QuestionBankHeader{}, nil
+		}
 		return nil, err
 	}
 
@@ -40,18 +46,32 @@ func (r *questionBankRepository) GetMyBanks(userID uint) ([]models.QuestionBankH
 	return data, err
 }
 
-func (r *questionBankRepository) GetTeacherID(userID uint) (uint, error) {
+func (r *questionBankRepository) GetTeacher(userID uint) (*models.Teacher, error) {
 	var teacher models.Teacher
 	if err := r.db.Where("userid = ?", userID).First(&teacher).Error; err != nil {
-		return 0, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, errors.New("teacher profile not found for this user")
+		}
+		return nil, err
 	}
-	return teacher.TeacherID, nil
+	return &teacher, nil
+}
+
+func (r *questionBankRepository) GetByID(id uint) (*models.QuestionBankHeader, error) {
+	var data models.QuestionBankHeader
+	err := r.db.Preload("Details").First(&data, id).Error
+	return &data, err
 }
 
 func (r *questionBankRepository) Create(data *models.QuestionBankHeader) error {
 	return r.db.Create(data).Error
 }
 
-func (r *questionBankRepository) Delete(id uint) error {
-	return r.db.Delete(&models.QuestionBankHeader{}, id).Error
+func (r *questionBankRepository) Delete(userID uint, id uint) error {
+	var teacher models.Teacher
+	if err := r.db.Where("userid = ?", userID).First(&teacher).Error; err != nil {
+		return err
+	}
+
+	return r.db.Where("headerid = ? AND teacherid = ?", id, teacher.TeacherID).Delete(&models.QuestionBankHeader{}).Error
 }

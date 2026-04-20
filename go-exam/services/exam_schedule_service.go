@@ -62,11 +62,16 @@ func (s *examScheduleService) CreateSchedule(
 
 	loc, _ := time.LoadLocation("Asia/Jakarta")
 
+	duration := req.Duration
+	if duration <= 0 {
+		duration = int(endTime.Sub(startTime).Minutes())
+	}
+
 	schedule := models.ExamSchedule{
 		ExamId:      examId,
 		StartTime:   startTime,
 		EndTime:     endTime,
-		Duration:    int(endTime.Sub(startTime).Minutes()),
+		Duration:    duration,
 		IsPublished: false,
 		CreatedDate: time.Now().In(loc),
 		UpdatedDate: time.Now().In(loc),
@@ -107,9 +112,14 @@ func (s *examScheduleService) UpdateSchedule(
 
 	loc, _ := time.LoadLocation("Asia/Jakarta")
 
+	duration := req.Duration
+	if duration <= 0 {
+		duration = int(endTime.Sub(startTime).Minutes())
+	}
+
 	schedule.StartTime = startTime
 	schedule.EndTime = endTime
-	schedule.Duration = int(endTime.Sub(startTime).Minutes())
+	schedule.Duration = duration
 	schedule.UpdatedDate = time.Now().In(loc)
 
 	return s.repo.Update(schedule)

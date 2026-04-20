@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Luizz29/go-gin-project/services"
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,9 @@ func (h *SelectHandler) GetRoles(c *gin.Context) {
 }
 
 func (h *SelectHandler) GetUsers(c *gin.Context) {
-	users, err := h.service.GetUsers()
+	roleName := c.Query("role")
+
+	users, err := h.service.GetUsers(roleName)
 	if err != nil {
 		println("ERROR GetUsers:", err.Error())
 
@@ -63,14 +66,23 @@ func (h *SelectHandler) GetSubjects(c *gin.Context) {
 }
 
 func (h *SelectHandler) GetTeachers(c *gin.Context) {
-    teachers, err := h.service.GetTeachers()
+    subjectIDStr := c.Query("subject_id")
+    var subjectID uint
+    if subjectIDStr != "" {
+        id, err := strconv.ParseUint(subjectIDStr, 10, 32)
+        if err == nil {
+            subjectID = uint(id)
+        }
+    }
+
+    teachers, err := h.service.GetTeachers(subjectID)
     if err != nil {
-        c.JSON(500, gin.H{
+        c.JSON(http.StatusInternalServerError, gin.H{
             "message": "Failed to fetch teachers",
         })
         return
     }
 
-    c.JSON(200, gin.H{"data": teachers})
+    c.JSON(http.StatusOK, gin.H{"data": teachers})
 }
 

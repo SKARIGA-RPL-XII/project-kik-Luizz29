@@ -7,7 +7,7 @@ type Subject struct {
 	SubjectNm   string    `json:"subject_name" gorm:"column:subjectnm"`
 	SubjectCode string    `json:"subject_code" gorm:"column:subjectcode"`
 	CreatedDate time.Time `json:"created_date" gorm:"column:createddate;autoCreateTime"`
-
+	IsActive    bool      `json:"isactive" gorm:"column:isactive"`
 }
 
 func (Subject) TableName() string {

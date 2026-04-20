@@ -95,17 +95,7 @@ export default function QuestionPage() {
           className="w-full border border-divider rounded-lg p-3 bg-card"
         />
 
-        {/* TYPE */}
-        <select
-          value={form.type}
-          onChange={(e) =>
-            setForm({ ...form, type: e.target.value })
-          }
-          className="border border-divider rounded-lg p-2 bg-card"
-        >
-          <option value="MCQ">Pilihan Ganda</option>
-          <option value="ESSAY">Essay</option>
-        </select>
+        {/* Tipe Soal dihapus karena selalu MCQ */}
 
         {/* SCORE */}
         <input

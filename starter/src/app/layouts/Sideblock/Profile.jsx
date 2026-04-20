@@ -46,7 +46,7 @@ const links = [
 ];
 
 export function Profile() {
-  const { logout } = useAuthContext();
+  const { user, logout } = useAuthContext();
 
   const handleLogout = () => {
     logout();
@@ -59,7 +59,8 @@ export function Profile() {
         as={Avatar}
         size={9}
         role="button"
-        src="/images/avatar/avatar-12.jpg"
+        name={user?.name}
+        initialColor="auto"
         indicator={
           <AvatarDot
             color="success"
@@ -85,17 +86,17 @@ export function Profile() {
           {({ close }) => (
             <>
               <div className="dark:bg-dark-800 flex items-center gap-4 rounded-t-lg bg-gray-100 px-4 py-5">
-                <Avatar size={14} src="/images/avatar/avatar-12.jpg" />
+                <Avatar size={14} name={user?.name} initialColor="auto" />
                 <div>
                   <Link
                     className="hover:text-primary-600 focus:text-primary-600 dark:text-dark-100 dark:hover:text-primary-400 dark:focus:text-primary-400 text-base font-medium text-gray-700"
                     to="/settings/general"
                   >
-                    Travis Fuller
+                    {user?.name || "User"}
                   </Link>
 
                   <p className="dark:text-dark-300 mt-0.5 text-xs text-gray-400">
-                    Product Designer
+                    {user?.role?.rolenm || "Member"}
                   </p>
                 </div>
               </div>

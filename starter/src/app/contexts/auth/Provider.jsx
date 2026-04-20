@@ -84,7 +84,7 @@ export function AuthProvider({ children }) {
           setSession(authToken);
 
           const response = await axios.get("/users/profile");
-          const { user } = response.data;
+          const user = response.data;
 
           dispatch({
             type: "INITIALIZE",
@@ -154,7 +154,10 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     setSession(null);
+    localStorage.clear();
+    sessionStorage.clear();
     dispatch({ type: "LOGOUT" });
+    window.location.href = "/login";
   };
 
   if (!children) {

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import DarkSelect from "components/ui/DarkSelect";
 import { Button as TailuxButton } from "components/ui";
 import { useNavigate } from "react-router";
 
@@ -31,7 +30,6 @@ export default function QuestionBankPage() {
   const [banks, setBanks] = useState([]);
 
   const [title, setTitle] = useState("");
-  const [subjectId, setSubjectId] = useState("");
   const [description, setDescription] = useState("");
 
   const [openDelete, setOpenDelete] = useState(false);
@@ -40,7 +38,6 @@ export default function QuestionBankPage() {
   const [openEdit, setOpenEdit] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
-  const [editSubjectId, setEditSubjectId] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
   const token = localStorage.getItem("authToken");
@@ -68,7 +65,7 @@ export default function QuestionBankPage() {
   // FETCH BANK
   // ======================
   const fetchBanks = async () => {
-    const res = await fetch(`${API_URL}/master/question-bank`, {
+    const res = await fetch(`${API_URL}/master/question-bank/my-banks`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -102,8 +99,6 @@ export default function QuestionBankPage() {
       },
       body: JSON.stringify({
         title,
-        subjectid: Number(subjectId),
-        teacherid: 1, // sementara hardcode dulu
         description,
         details: []   // WAJIB ADA
       }),
@@ -119,7 +114,6 @@ export default function QuestionBankPage() {
     setBanks((prev) => [...prev, json.data]);
 
     setTitle("");
-    setSubjectId("");
     setDescription("");
 
     toast.success("Bank berhasil ditambahkan");
@@ -137,7 +131,6 @@ export default function QuestionBankPage() {
       },
       body: JSON.stringify({
         title: editTitle,
-        subjectid: Number(editSubjectId),
         description: editDescription,
       }),
     });
@@ -153,7 +146,6 @@ export default function QuestionBankPage() {
           ? {
             ...b,
             title: editTitle,
-            subjectid: Number(editSubjectId),
             description: editDescription,
           }
           : b
@@ -217,7 +209,6 @@ export default function QuestionBankPage() {
                 onClick={() => {
                   setEditId(bank.headerid);
                   setEditTitle(bank.title);
-                  setEditSubjectId(bank.subjectid);
                   setEditDescription(bank.description);
                   setOpenEdit(true);
                 }}
@@ -282,7 +273,7 @@ export default function QuestionBankPage() {
           <div className="grid md:grid-cols-2 gap-4">
 
             {/* TITLE */}
-            <div className="space-y-1">
+            <div className="md:col-span-2 space-y-1">
               <label className="text-sm font-medium text-muted">
                 Title
               </label>
@@ -293,16 +284,7 @@ export default function QuestionBankPage() {
               />
             </div>
 
-            {/* SUBJECT */}
-            <DarkSelect
-              label="Subject"
-              value={subjectId}
-              options={subjects.map((s) => ({
-                value: s.subjectid,
-                label: s.subjectnm,
-              }))}
-              onChange={setSubjectId}
-            />
+
 
             {/* DESCRIPTION */}
             <div className="md:col-span-2 space-y-1">
@@ -384,15 +366,7 @@ export default function QuestionBankPage() {
               onChange={(e) => setEditTitle(e.target.value)}
             />
 
-            <DarkSelect
-              label="Subject"
-              value={editSubjectId}
-              options={subjects.map((s) => ({
-                value: s.subjectid,
-                label: s.subjectnm,
-              }))}
-              onChange={setEditSubjectId}
-            />
+
 
             <textarea
               className="w-full rounded-lg px-4 py-2 text-sm bg-card border border-divider"

@@ -14,6 +14,16 @@ import TeacherGuard from "middleware/TeacherGuard";
 
 // ----------------------------------------------------------------------
 
+import { useAuthContext } from "app/contexts/auth/context";
+
+const HomeRedirect = () => {
+  const { user } = useAuthContext();
+  if (Number(user?.role?.roleid) === 3) {
+    return <Navigate to="/student/dashboard" replace />;
+  }
+  return <Navigate to="/dashboards/home" replace />;
+};
+
 const protectedRoutes = {
   id: "protected",
   Component: AuthGuard,
@@ -52,17 +62,19 @@ const protectedRoutes = {
 
 
     // =========================
+    // INDEX REDIRECT
+    // =========================
+    {
+      index: true,
+      element: <HomeRedirect />,
+    },
+
+    // =========================
     // ADMIN + TEACHER AREA (SIDEBAR)
     // =========================
     {
-      path: "/",
       Component: DynamicLayout,
       children: [
-
-        {
-          index: true,
-          element: <Navigate to="/dashboards/home" />,
-        },
 
         {
           path: "dashboards",

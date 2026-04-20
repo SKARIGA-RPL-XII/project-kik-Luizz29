@@ -38,14 +38,9 @@ const onSubmit = async (data) => {
     password: data.password,
   });
 
-  console.log("LOGIN RESULT:", user);   // ⭐ disini
-  console.log("ROLE OBJECT:", user?.role); 
-  console.log("ROLE ID:", user?.role?.roleid);
-  console.log("TYPE:", typeof user?.role?.roleid);
-
   if (!user) return;
 
-  const roleId = user.role?.roleid;
+  const roleId = Number(user.role?.roleid);
 
   const roleRedirect = {
     1: "/dashboards/home",
@@ -53,7 +48,7 @@ const onSubmit = async (data) => {
     3: "/student/dashboard",
   };
 
-  navigate(roleRedirect[roleId] || "/");
+  navigate(roleRedirect[roleId] || "/dashboards/home");
 };
 
 

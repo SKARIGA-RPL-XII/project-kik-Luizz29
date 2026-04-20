@@ -12,6 +12,7 @@ type ExamParticipant struct {
 	Status        string     `gorm:"column:status"`
 
 	Score         float64    `gorm:"column:score"`
+	StartTime     *time.Time `gorm:"column:starttime"`
 	FinishTime    *time.Time `gorm:"column:finishtime"`
 
 	CreatedDate time.Time `gorm:"column:createddate"`

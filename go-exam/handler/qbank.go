@@ -78,10 +78,15 @@ func (h *QuestionBankHandler) Create(c *gin.Context) {
 }
 
 func (h *QuestionBankHandler) Delete(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
 
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	err := h.service.Delete(uint(id))
+	err := h.service.Delete(userID.(uint), uint(id))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return

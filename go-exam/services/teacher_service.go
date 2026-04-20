@@ -38,18 +38,23 @@ func (s *teacherService) Create(req models.CreateTeacherRequest) (models.Teacher
 	return s.repo.Create(data)
 }
 func (s *teacherService) Update(id uint, req models.UpdateTeacherRequest) error {
+	data := make(map[string]interface{})
 
-	data, err := s.repo.GetByID(id)
-	if err != nil {
-		return err
+	if req.TeacherNm != nil {
+		data["teachernm"] = *req.TeacherNm
 	}
+	if req.UserID != nil {
+		data["userid"] = *req.UserID
+	}
+	if req.SubjectID != nil {
+		data["subjectid"] = *req.SubjectID
+	}
+	if req.IsActive != nil {
+		data["isactive"] = *req.IsActive
+	}
+	data["updateddate"] = time.Now()
 
-	data.TeacherNm = req.TeacherNm
-	data.UserID = req.UserID
-	data.IsActive = req.IsActive
-	data.UpdatedDate = time.Now()
-
-	return s.repo.Update(data)
+	return s.repo.Update(id, data)
 }
 
 func (s *teacherService) Delete(id uint) error {
