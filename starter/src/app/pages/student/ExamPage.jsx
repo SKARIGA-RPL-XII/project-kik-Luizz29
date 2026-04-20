@@ -2,11 +2,20 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ConfirmModal } from "components/shared/ConfirmModal";
 import { useDisclosure } from "hooks";
+import { Button as TailuxButton, Card, Badge, Spinner } from "components/ui";
 
 import { useAuthContext } from "app/contexts/auth/context";
 
 import { API_URL } from '../../../utils/config';
 import { toast } from 'sonner';
+import { 
+    ClockIcon, 
+    CheckIcon, 
+    ChevronLeftIcon, 
+    ChevronRightIcon,
+    ClipboardDocumentListIcon,
+    InformationCircleIcon
+} from "@heroicons/react/24/outline";
 
 export default function ExamPage() {
   const { logout } = useAuthContext();
@@ -23,9 +32,6 @@ export default function ExamPage() {
       ? "success"
       : "pending";
 
-
-
-  //=============================
   const { examID } = useParams();
   const navigate = useNavigate();
 
@@ -39,9 +45,6 @@ export default function ExamPage() {
 
   const joinedRef = useRef(false);
 
-
-  //MODALLL
-
   const modalMessages = {
     pending: {
       title: "Kumpulkan Ujian?",
@@ -51,49 +54,49 @@ export default function ExamPage() {
     },
     success: {
       title: "Ujian Berhasil Dikumpulkan 🎉",
+      description: "Jawaban Anda telah aman tersimpan di sistem.",
+      actionText: "Selesai",
     },
     error: {
       title: "Gagal Mengumpulkan",
       description:
         "Terjadi kesalahan. Periksa koneksi internet lalu coba lagi.",
+      actionText: "Coba Lagi",
     },
   };
 
-  // =============================
-  // JOIN EXAM
-  // =============================
   const joinExam = async (id, coords) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/student/exam/${id}/join`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            latitude: coords.latitude,
+            longitude: coords.longitude
+          })
+        }
+      );
 
-    const res = await fetch(
-      `${API_URL}/student/exam/${id}/join`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-           latitude: coords.latitude,
-           longitude: coords.longitude
-        })
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.message || "Tidak bisa join ujian");
+        navigate("/student/dashboard");
+        return false;
       }
-    );
-
-    if (!res.ok) {
-      const err = await res.json();
-      toast.error(err.message || "Tidak bisa join ujian");
+      return true;
+    } catch {
+      toast.error("Koneksi gagal saat mencoba masuk ujian");
       navigate("/student/dashboard");
       return false;
     }
-
-    return true;
   };
 
-  // =============================
-  // FETCH QUESTIONS
-  // =============================
   const fetchQuestions = async (id) => {
-
     const res = await fetch(
       `${API_URL}/student/exam/${id}/questions`,
       {
@@ -112,10 +115,8 @@ export default function ExamPage() {
     const data = await res.json();
     setQuestions(data.questions || []);
 
-    // Timer calculation based on duration from trexamschedule
     if (data.duration > 0) {
       const totalSeconds = data.duration * 60;
-
       if (data.start_time) {
         const startTime = new Date(data.start_time).getTime();
         const now = new Date().getTime();
@@ -126,14 +127,10 @@ export default function ExamPage() {
         setTimeLeft(totalSeconds);
       }
     } else {
-      // fallback if duration is 0 or not set
       setTimeLeft(60 * 60); 
     }
   };
 
-  // =============================
-  // REQUEST GEOLOCATION
-  // =============================
   const requestLocation = () => {
       return new Promise((resolve) => {
           if (!navigator.geolocation) {
@@ -148,18 +145,13 @@ export default function ExamPage() {
       });
   };
 
-  // =============================
-  // LOAD EXAM ENGINE & HEARTBEAT
-  // =============================
   useEffect(() => {
-
     if (!examID) return;
     if (joinedRef.current) return;
 
     joinedRef.current = true;
 
     const loadExam = async () => {
-      
       const coords = await requestLocation();
       const ok = await joinExam(Number(examID), coords);
       if (!ok) return;
@@ -170,13 +162,11 @@ export default function ExamPage() {
       if (saved) {
         setAnswers(JSON.parse(saved));
       }
-
       setLoading(false);
     };
 
     loadExam();
 
-    // 15 seconds Heartbeat tracker
     const heartbeatInterval = setInterval(async () => {
        const coords = await requestLocation();
        fetch(`${API_URL}/student/exam/${examID}/heartbeat`, {
@@ -188,60 +178,46 @@ export default function ExamPage() {
            body: JSON.stringify(coords)
        }).then(async res => {
            if (!res.ok) {
-               // Periksa tipe konten untuk mencegah error JSON parse
                const contentType = res.headers.get("content-type");
                if (contentType && contentType.includes("application/json")) {
                    const err = await res.json();
-                   toast.error(err.message || "Sistem mendeteksi akses jaringan tidak sah atau lokasi berada di luar jangkauan radar ujian! Ujian diblokir.");
+                   toast.error(err.message || "Pelanggaran keamanan terdeteksi!");
                } else {
-                   toast.error("Jaringan/IP berubah atau akses ditolak oleh server. Anda dikeluarkan dari ujian!");
+                   toast.error("Akses ditolak oleh server.");
                }
                navigate("/student/dashboard");
            }
-       }).catch((err) => {
-           console.error("Heartbeat error:", err);
-           toast.error("Koneksi tidak stabil, berganti jaringan, atau server tidak dapat dijangkau. Keamanan ujian gagal divalidasi. Anda dikeluarkan!");
+       }).catch(() => {
+           toast.error("Koneksi terputus. Validasi keamanan gagal.");
            navigate("/student/dashboard");
        });
     }, 15000);
 
     return () => clearInterval(heartbeatInterval);
-
   }, [examID]);
 
-  // =============================
-  // KONTROL KEAMANAN KETAT
-  // =============================
   useEffect(() => {
     if (!examID || loading) return;
 
-    // Fungsi untuk mengeluarkan siswa secara paksa
     const handleCheatLogout = () => {
       logout();
       window.location.href = "/login";
     };
 
-    // 1. Deteksi ganti tab (Visibility Change)
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        toast.error("Melanggar aturan! Anda membuka tab/aplikasi lain. Anda dikeluarkan dari ujian.");
+        toast.error("Keluar dari tab ujian dilarang!");
         handleCheatLogout();
       }
     };
 
-    // 2. Deteksi keluar dari browser/buka desktop lain (Window Blur)
     const handleBlur = () => {
-      toast.error("Melanggar aturan! Ujian kehilangan fokus layar. Anda dikeluarkan dari ujian.");
+      toast.error("Layar kehilangan fokus! Anda dikeluarkan.");
       handleCheatLogout();
     };
 
-    // 3. Mencegah klik kanan
-    const handleContextMenu = (e) => {
-      e.preventDefault();
-      toast.warning("Klik kanan dinonaktifkan selama ujian.");
-    };
+    const handleContextMenu = (e) => e.preventDefault();
 
-    // 4. Mencegah shortcut keyboard tertentu (F12, inspect element)
     const handleKeyDown = (e) => {
       if (
         e.key === "F12" ||
@@ -249,12 +225,9 @@ export default function ExamPage() {
         (e.ctrlKey && (e.key === "U" || e.key === "u"))
       ) {
         e.preventDefault();
-        toast.warning("Shortcut keyboard dilarang selama ujian.");
       }
     };
 
-    // Berikan jeda 3 detik sebelum mengaktifkan penjagaan
-    // Untuk memberi waktu browser kembali fokus setelah mengizinkan lokasi/geolokasi
     const securityTimeout = setTimeout(() => {
       document.addEventListener("visibilitychange", handleVisibilityChange);
       window.addEventListener("blur", handleBlur);
@@ -271,35 +244,19 @@ export default function ExamPage() {
     };
   }, [examID, logout, loading]);
 
-  // =============================
-  // SAVE ANSWER (LOCAL ONLY)
-  // =============================
   const handleAnswer = (questionID, optionID) => {
-
     const updated = {
       ...answers,
       [questionID]: optionID
     };
-
     setAnswers(updated);
-
-    // simpan ke localStorage
-    localStorage.setItem(
-      `exam_${examID}_answers`,
-      JSON.stringify(updated)
-    );
+    localStorage.setItem(`exam_${examID}_answers`, JSON.stringify(updated));
   };
 
-  // =============================
-  // SUBMIT EXAM
-  // =============================
   const submitExam = async () => {
-
     setConfirmLoading(true);
-
     try {
       const coords = await requestLocation();
-
       const res = await fetch(
         `${API_URL}/student/exam/${examID}/submit`,
         {
@@ -322,15 +279,12 @@ export default function ExamPage() {
       }
 
       localStorage.removeItem(`exam_${examID}_answers`);
-
       setSubmitSuccess(true);
       setSubmitError(false);
-
       setTimeout(() => {
         close();
         navigate("/student/dashboard");
-      }, 1500);
-
+      }, 2000);
     } catch (e) {
       toast.error(e.message);
       setSubmitError(true);
@@ -339,24 +293,18 @@ export default function ExamPage() {
     }
   };
 
-
-  // =============================
-  // TIMER
-  // =============================
   useEffect(() => {
     if (loading || timeLeft <= 0) return;
-
     const timer = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timer);
-          submitExam(); // auto submit
+          submitExam();
           return 0;
         }
         return t - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [loading, timeLeft === 0]); 
 
@@ -365,184 +313,210 @@ export default function ExamPage() {
       s % 60
     ).padStart(2, "0")}`;
 
-  const question = questions[currentQuestion - 1];
+  const currentQuestionData = questions[currentQuestion - 1];
+  const progress = Math.round((Object.keys(answers).length / (questions.length || 1)) * 100);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-700">
-        Loading exam...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-dark-900 gap-4">
+        <Spinner size={48} className="text-primary" />
+        <p className="text-slate-500 dark:text-dark-300 font-medium animate-pulse">Menyiapkan lembar ujian...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb] text-gray-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-900 transition-colors duration-300 flex flex-col">
+      {/* STICKY HEADER */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-dark-800/80 backdrop-blur-md border-b border-slate-200 dark:border-dark-700">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <ClipboardDocumentListIcon className="h-6 w-6" />
+                </div>
+                <div>
+                    <h1 className="font-bold text-slate-900 dark:text-dark-50 leading-none">
+                        Lembar Ujian
+                    </h1>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-dark-400 mt-1">
+                        ID: {examID}
+                    </p>
+                </div>
+            </div>
 
-      {/* HEADER */}
-      <header className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-6">
+                <div className="hidden md:block w-48">
+                    <div className="flex justify-between mb-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</span>
+                        <span className="text-[10px] font-bold text-primary uppercase">{progress}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 dark:bg-dark-700 rounded-full overflow-hidden">
+                        <div 
+                            className="h-full bg-primary transition-all duration-500" 
+                            style={{ width: `${progress}%` }}
+                        ></div>
+                    </div>
+                </div>
 
-        <h1 className="font-semibold text-lg">
-          Ujian ID : {examID}
-        </h1>
-
-        <div className="font-mono text-red-500 text-lg font-semibold">
-          ⏱ {formatTime(timeLeft)}
+                <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/10 px-4 py-2 rounded-xl border border-red-100 dark:border-red-900/30">
+                    <ClockIcon className="h-5 w-5 text-red-500 animate-pulse" />
+                    <span className="font-mono text-red-600 dark:text-red-400 font-bold text-lg">
+                        {formatTime(timeLeft)}
+                    </span>
+                </div>
+            </div>
         </div>
-
       </header>
 
-      <div className="flex max-w-7xl mx-auto py-8 gap-6">
+      <div className="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* NAVIGATION SIDEBAR */}
+        <aside className="lg:col-span-3 space-y-6">
+            <Card skin="shadow" className="p-6 rounded-3xl dark:bg-dark-800 border-none">
+                <h2 className="text-xs font-bold text-slate-400 dark:text-dark-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <CheckIcon className="h-4 w-4" />
+                    Navigasi Soal
+                </h2>
+                <div className="grid grid-cols-5 gap-2.5">
+                    {questions.map((q, i) => {
+                        const isActive = currentQuestion === i + 1;
+                        const isAnswered = answers[q.id];
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => setCurrentQuestion(i + 1)}
+                                className={`
+                                    h-10 w-full rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center
+                                    ${isActive 
+                                        ? "bg-primary text-white shadow-lg shadow-primary/30 scale-110" 
+                                        : isAnswered 
+                                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20" 
+                                            : "bg-slate-100 dark:bg-dark-700 text-slate-500 dark:text-dark-300 hover:bg-slate-200 dark:hover:bg-dark-600"
+                                    }
+                                `}
+                            >
+                                {i + 1}
+                            </button>
+                        );
+                    })}
+                </div>
+            </Card>
 
-        {/* SIDEBAR NAV */}
-        <aside className="w-72 bg-white rounded-xl shadow-sm border p-5 h-fit">
-
-          <h2 className="font-semibold mb-4">
-            Soal
-          </h2>
-
-          <div className="grid grid-cols-5 gap-2">
-
-            {questions.map((q, i) => {
-
-              const isActive = currentQuestion === i + 1;
-              const isAnswered = answers[q.id];
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => setCurrentQuestion(i + 1)}
-                  className={`
-                  h-10 rounded-lg text-sm font-medium transition
-                  ${isActive && "bg-blue-600 text-white"}
-                  ${!isActive && isAnswered && "bg-green-500 text-white"}
-                  ${!isActive && !isAnswered && "bg-gray-100 hover:bg-gray-200"}
-                `}
-                >
-                  {i + 1}
-                </button>
-              );
-            })}
-
-          </div>
-
+            <div className="bg-amber-50 dark:bg-amber-900/10 p-5 rounded-3xl border border-amber-100 dark:border-amber-900/20 flex gap-4">
+                <InformationCircleIcon className="h-6 w-6 text-amber-600 shrink-0" />
+                <p className="text-[11px] font-medium text-amber-700 dark:text-amber-500 leading-relaxed">
+                    Dilarang membuka tab lain atau meninggalkan layar ujian. Pelanggaran akan menyebabkan Anda dikeluarkan secara otomatis.
+                </p>
+            </div>
         </aside>
 
-        {/* QUESTION CONTENT */}
-        <main className="flex-1 bg-white rounded-xl shadow-sm border p-8">
+        {/* QUESTION PANEL */}
+        <main className="lg:col-span-9 flex flex-col gap-6">
+            <Card skin="shadow" className="p-8 md:p-12 rounded-[2rem] dark:bg-dark-800 border-none flex-1">
+                <div className="flex items-center gap-3 mb-8">
+                    <Badge variant="soft" color="primary" className="rounded-lg px-3 py-1 font-bold">
+                        SOAL NO. {currentQuestion}
+                    </Badge>
+                </div>
 
-          <h2 className="font-semibold text-lg mb-4">
-            Soal No. {currentQuestion}
-          </h2>
+                <div className="mb-12">
+                    <p className="text-xl md:text-2xl font-semibold text-slate-800 dark:text-dark-50 leading-relaxed">
+                        {currentQuestionData?.question}
+                    </p>
+                </div>
 
-          <p className="text-gray-700 leading-relaxed mb-8">
-            {question?.question}
-          </p>
+                <div className="space-y-4">
+                    {currentQuestionData?.options?.map((opt) => {
+                        const selected = answers[currentQuestionData.id] === opt.id;
+                        return (
+                            <label
+                                key={opt.id}
+                                className={`
+                                    group flex gap-5 items-center p-6 rounded-3xl border-2 cursor-pointer transition-all duration-300
+                                    ${selected
+                                        ? "border-primary bg-primary/5 dark:bg-primary/10"
+                                        : "border-slate-100 dark:border-dark-700 hover:border-primary/30 hover:bg-slate-50 dark:hover:bg-dark-750"}
+                                `}
+                            >
+                                <div className={`
+                                    w-8 h-8 flex items-center justify-center rounded-xl border-2 transition-all duration-300
+                                    ${selected
+                                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/30"
+                                        : "border-slate-200 dark:border-dark-600 text-slate-400 dark:text-dark-400 group-hover:border-primary/50"}
+                                `}>
+                                    <span className="text-xs font-bold">{opt.label}</span>
+                                </div>
 
-          {/* OPTIONS */}
-          <div className="flex flex-col gap-4">
+                                <input
+                                    type="radio"
+                                    className="hidden"
+                                    checked={selected}
+                                    onChange={() => handleAnswer(currentQuestionData.id, opt.id)}
+                                />
 
-            {question?.options?.map((opt) => {
+                                <span className={`text-base md:text-lg font-medium transition-colors ${selected ? 'text-primary' : 'text-slate-600 dark:text-dark-200'}`}>
+                                    {opt.optiontext}
+                                </span>
 
-              const selected = answers[question.id] === opt.id;
+                                {selected && <CheckIcon className="h-6 w-6 text-primary ml-auto" />}
+                            </label>
+                        );
+                    })}
+                </div>
+            </Card>
 
-              return (
-                <label
-                  key={opt.id}
-                  className={`
-                  flex gap-4 items-start p-4 rounded-xl border cursor-pointer transition
-                  ${selected
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/50"}
-                `}
+            {/* ACTION FOOTER */}
+            <div className="flex justify-between items-center bg-white dark:bg-dark-800 p-6 rounded-[2rem] border border-slate-100 dark:border-dark-700 shadow-sm">
+                <TailuxButton 
+                    variant="outlined"
+                    onClick={() => setCurrentQuestion((q) => Math.max(q - 1, 1))}
+                    disabled={currentQuestion === 1}
+                    className="rounded-2xl px-6 flex items-center gap-2 font-bold uppercase tracking-widest text-[10px]"
                 >
+                    <ChevronLeftIcon className="h-4 w-4" />
+                    Sebelumnya
+                </TailuxButton>
 
-                  {/* CUSTOM ICON */}
-                  <div className={`
-                    w-6 h-6 flex items-center justify-center rounded-full border mt-1
-                    ${selected
-                      ? "bg-blue-600 border-blue-600 text-white"
-                      : "border-gray-300"}
-                  `}>
-
-                    {selected && "✓"}
-
-                  </div>
-
-                  <input
-                    type="radio"
-                    className="hidden"
-                    checked={selected}
-                    onChange={() =>
-                      handleAnswer(question.id, opt.id)
-                    }
-                  />
-
-                  <span className="text-gray-800">
-                    <b>{opt.label}.</b> {opt.optiontext}
-                  </span>
-
-                </label>
-              );
-            })}
-
-          </div>
-
-          {/* NAV BUTTON */}
-          <div className="flex justify-between mt-10">
-
-            <button
-              className="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
-              onClick={() =>
-                setCurrentQuestion((q) => Math.max(q - 1, 1))
-              }
-            >
-              ← Sebelumnya
-            </button>
-
-            {currentQuestion === questions.length ? (
-              <button
-                className="px-6 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
-                onClick={() => {
-                  const answeredCount = Object.keys(answers).length;
-                  if (answeredCount < questions.length) {
-                    toast.error(`Ada ${questions.length - answeredCount} soal yang belum dijawab!`);
-                    return;
-                  }
-                  setSubmitSuccess(false);
-                  setSubmitError(false);
-                  open();
-                }}
-              >
-                Submit Ujian
-              </button>
-            ) : (
-              <button
-                className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-                onClick={() =>
-                  setCurrentQuestion((q) =>
-                    Math.min(q + 1, questions.length)
-                  )
-                }
-              >
-                Lanjut →
-              </button>
-            )}
-
-          </div>
-
+                {currentQuestion === questions.length ? (
+                    <TailuxButton
+                        color="error"
+                        onClick={() => {
+                            const answeredCount = Object.keys(answers).length;
+                            if (answeredCount < questions.length) {
+                                toast.error(`Ada ${questions.length - answeredCount} soal yang belum dijawab!`);
+                                return;
+                            }
+                            setSubmitSuccess(false);
+                            setSubmitError(false);
+                            open();
+                        }}
+                        className="rounded-2xl px-8 flex items-center gap-2 font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-red-500/20"
+                    >
+                        Selesai & Kumpulkan
+                        <CheckIcon className="h-4 w-4" />
+                    </TailuxButton>
+                ) : (
+                    <TailuxButton
+                        color="primary"
+                        onClick={() => setCurrentQuestion((q) => Math.min(q + 1, questions.length))}
+                        className="rounded-2xl px-8 flex items-center gap-2 font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20"
+                    >
+                        Lanjut Ke Soal {currentQuestion + 1}
+                        <ChevronRightIcon className="h-4 w-4" />
+                    </TailuxButton>
+                )}
+            </div>
         </main>
-
       </div>
-<ConfirmModal
-  show={isOpen}
-  onClose={close}
-  messages={modalMessages}
-  onOk={submitExam}
-  confirmLoading={confirmLoading}
-  state={modalState}
-/>
 
+      <ConfirmModal
+        show={isOpen}
+        onClose={close}
+        messages={modalMessages}
+        onOk={submitExam}
+        confirmLoading={confirmLoading}
+        state={modalState}
+      />
     </div>
   );
-
 }

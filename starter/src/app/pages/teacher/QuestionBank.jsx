@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button as TailuxButton } from "components/ui";
 import { useNavigate } from "react-router";
+import { ConfirmModal } from "components/shared/ConfirmModal";
 
 
 // MUI
@@ -39,6 +40,9 @@ export default function QuestionBankPage() {
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [showAddConfirm, setShowAddConfirm] = useState(false);
 
   const token = localStorage.getItem("authToken");
 
@@ -90,33 +94,48 @@ export default function QuestionBankPage() {
   // ======================
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const res = await fetch(`${API_URL}/master/question-bank`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        title,
-        description,
-        details: []   // WAJIB ADA
-      }),
-    });
-
-
-    if (!res.ok) {
-      toast.error("Gagal menambahkan bank");
+    if (!title) {
+      toast.warning("Title wajib diisi");
       return;
     }
+    setShowAddConfirm(true);
+  };
 
-    const json = await res.json();
-    setBanks((prev) => [...prev, json.data]);
+  const handleConfirmAdd = async () => {
+    setIsAdding(true);
+    try {
+      const res = await fetch(`${API_URL}/master/question-bank`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          details: []   // WAJIB ADA
+        }),
+      });
 
-    setTitle("");
-    setDescription("");
+      if (!res.ok) {
+        toast.error("Gagal menambahkan bank");
+        return;
+      }
 
-    toast.success("Bank berhasil ditambahkan");
+      const json = await res.json();
+      setBanks((prev) => [...prev, json.data]);
+
+      setTitle("");
+      setDescription("");
+
+      toast.success("Bank berhasil ditambahkan");
+      setShowAddConfirm(false);
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat menambahkan bank");
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   // ======================
@@ -383,6 +402,21 @@ export default function QuestionBankPage() {
             </TailuxButton>
           </ModalFooter>
         </Modal>
+
+        <ConfirmModal
+          show={showAddConfirm}
+          onClose={() => setShowAddConfirm(false)}
+          onOk={handleConfirmAdd}
+          confirmLoading={isAdding}
+          state="pending"
+          messages={{
+            pending: {
+              title: "Konfirmasi Tambah Bank",
+              description: `Apakah Anda yakin ingin menambahkan bank soal "${title}"?`,
+              actionText: "Ya, Tambahkan",
+            },
+          }}
+        />
     </div>
   );
 }

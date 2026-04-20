@@ -27,29 +27,22 @@ func (s *dashboardService) GetTeacherStats(userID uint) (*models.TeacherDashboar
 		return nil, err
 	}
 
-	// Count Assigned Exams
+	// 1. Count Assigned Exams (Exams where teacherid is assigned)
 	s.db.Model(&models.ExamHd{}).Where("teacherid = ?", teacher.TeacherID).Count(&stats.TotalAssignedExams)
 
-	// Count Published Exams
-	s.db.Model(&models.ExamHd{}).Where("teacherid = ? AND status = ?", teacher.TeacherID, "published").Count(&stats.ActiveExams)
+	// 2. Count Total Question Banks (Banks created by this teacher)
+	s.db.Model(&models.QuestionBankHeader{}).Where("teacherid = ?", teacher.TeacherID).Count(&stats.TotalQuestionBanks)
 
-	// Count Questions (Assuming questions are linked to teacher via subject or something, but let's count questions in qbank owned by teacher)
-	s.db.Model(&models.Question{}).Joins("join trqbank q on q.id = msquestion.qbankid").Where("q.createdby = ?", userID).Count(&stats.TotalQuestions)
-
-	// Count Students (Assigned to the teacher's classes)
-	s.db.Table("mssiswa s").
-		Joins("join msclass c on c.id = s.classid").
-		Joins("join trexamclass ec on ec.classid = c.id").
-		Joins("join trexamhd e on e.id = ec.examid").
-		Where("e.teacherid = ?", teacher.TeacherID).
-		Distinct("s.id").
-		Count(&stats.TotalStudents)
+	// 3. Count Total Questions (Questions inside banks created by this teacher)
+	s.db.Table("trquestionbankdt").
+		Joins("join trquestionbankhd on trquestionbankhd.headerid = trquestionbankdt.headerid").
+		Where("trquestionbankhd.teacherid = ?", teacher.TeacherID).
+		Count(&stats.TotalQuestions)
 
 	// Mock Recent Activity
 	recentActivity := []models.TeacherRecentActivity{
-		{ID: 1, Action: "Created", Entity: "New Question Bank", Timestamp: "1 hour ago"},
-		{ID: 2, Action: "Published", Entity: "Ujian Tengah Semester", Timestamp: "3 hours ago"},
-		{ID: 3, Action: "Assigned", Entity: "Kelas XII RPL 1", Timestamp: "5 hours ago"},
+		{ID: 1, Action: "Dibuat", Entity: "Bank Soal Baru", Timestamp: "Baru saja"},
+		{ID: 2, Action: "Ditugaskan", Entity: "Ujian Akhir Semester", Timestamp: "Hari ini"},
 	}
 
 	return &models.TeacherDashboardResponse{

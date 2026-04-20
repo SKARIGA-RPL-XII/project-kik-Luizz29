@@ -5,7 +5,6 @@ import {
   AcademicCapIcon, 
   BookOpenIcon,
   DocumentTextIcon,
-  UsersIcon,
   ClockIcon
 } from "@heroicons/react/24/outline";
 import { API_URL } from "utils/config";
@@ -41,8 +40,8 @@ export default function TeacherHome() {
       bg: 'bg-blue-50' 
     },
     { 
-      name: 'Active Exams', 
-      value: statsData?.stats?.active_exams ?? '0', 
+      name: 'Total Bank Soal', 
+      value: statsData?.stats?.total_question_banks ?? '0', 
       icon: BookOpenIcon, 
       color: 'text-green-600', 
       bg: 'bg-green-50' 
@@ -53,13 +52,6 @@ export default function TeacherHome() {
       icon: DocumentTextIcon, 
       color: 'text-purple-600', 
       bg: 'bg-purple-50' 
-    },
-    { 
-      name: 'Total Students', 
-      value: statsData?.stats?.total_students ?? '0', 
-      icon: UsersIcon, 
-      color: 'text-orange-600', 
-      bg: 'bg-orange-50' 
     },
   ];
 
@@ -85,7 +77,7 @@ export default function TeacherHome() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {stats.map((stat) => (
             <Card key={stat.name} className="p-5 hover:shadow-md transition-shadow duration-200">
               <div className="flex items-center justify-between">

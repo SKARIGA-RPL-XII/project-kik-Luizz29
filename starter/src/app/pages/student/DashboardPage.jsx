@@ -195,8 +195,8 @@ function ExamCard({ exam, status, onClick }) {
             <div className="space-y-4">
                 <div className="flex items-start justify-between">
                     <Badge 
-                        variant="flat" 
-                        color={isActive ? 'flat' : isFinished ? 'success' : 'flat'}
+                        variant="soft" 
+                        color={isActive ? 'primary' : isFinished ? 'success' : 'neutral'}
                         className={`font-bold text-[9px] uppercase tracking-widest px-3 py-1 rounded-lg
                             ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-dark-700 text-slate-500 dark:text-dark-300'}
                         `}

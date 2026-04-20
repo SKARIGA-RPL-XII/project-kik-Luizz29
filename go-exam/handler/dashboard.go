@@ -26,7 +26,7 @@ func (h *DashboardHandler) GetAdminStats(c *gin.Context) {
 }
 
 func (h *DashboardHandler) GetTeacherStats(c *gin.Context) {
-	userID := c.MustGet("userID").(uint)
+	userID := c.MustGet("user_id").(uint)
 	stats, err := h.service.GetTeacherStats(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

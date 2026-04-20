@@ -2,9 +2,8 @@ package models
 
 type TeacherDashboardStats struct {
 	TotalAssignedExams int64 `json:"total_assigned_exams"`
-	ActiveExams        int64 `json:"active_exams"`
+	TotalQuestionBanks int64 `json:"total_question_banks"`
 	TotalQuestions     int64 `json:"total_questions"`
-	TotalStudents      int64 `json:"total_students"`
 }
 
 type TeacherRecentActivity struct {
